@@ -111,6 +111,57 @@ _*_ ((Lx , Rx) , inhabited-left-x , inhabited-right-x , rounded-left-x , rounded
 Here's the plan. We'll start by outlining the strategy in text, and
 later turn it into code.
 
+Given cuts $u$, $v$, define their product $uv$ as in the file. Our
+task is to show it satisfies the various properties.
+
+Given a rational $p$ and cut $u$, define $p\cdot u \in \mathbb R$ by:
+\begin{itemize}
+\item for $0$: $q < 0\cdot u$ iff $q < 0$ and $q > 0\cdot u$ iff $q > 0$.
+\item for $p > 0$: $q < p\cdot u$ iff $\tfrac qp < u$, define the
+  upper pre-cut by applying the swapping symmetry (on pairs of
+  $\mathbb Q$-propositions).
+\item for $q < 0$: define the pre-cut by swapping again. (Not sure
+  symmetry is the right gadget to use here.)
+\end{itemize}
+
+\begin{lemma}
+  The function $(\cdot) : \mathbb Q \times \mathrm{Precuts} \to
+  \mathrm{Precuts}$ is a monoid actions, and it restricts to a group
+  action on $\mathbb Q_{\neq 0}$.
+\end{lemma}
+
+\begin{lemma}
+  $(\cdot)$ restrict to an action on dedkind cuts.
+\end{lemma}
+
+\begin{lemma}
+  if $uv > 0$ then either:
+  \begin{itemize}
+  \item $u, v > 0$; or
+  \item $u, v < 0$.
+  \end{itemize}
+\end{lemma}
+
+\begin{lemma}
+  If let $u > 0$, $v > 0$ be cuts, $a \in \mathbb Q$. If $uv > a \geq
+  0$ then we have some rationals $0 < s < u$ and $0 < t < v$ such that
+  $a < st$.
+\end{lemma}
+
+\begin{lemma}
+  Let $u, v > 0$ be cuts. If $uv < 1$ then we have some rationals $0 <
+  s < u$ and $0 < t < v$ such that $st < 1$ and either $s < 1$ or $t <
+  1$.
+\end{lemma}
+
+\begin{lemma}
+  Let $u,v > 0$ be cuts and $p$ rational. If $1 < uv < p$, then $1 < p$.
+\end{lemma}
+
+\begin{lemma}
+  Let $u$,$v$ be cuts. The precut $uv$ is disjoint.
+\end{lemma}
+
 \begin{code}
   {-
 
