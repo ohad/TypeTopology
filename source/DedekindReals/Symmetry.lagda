@@ -141,26 +141,74 @@ Given a rational $p$ and cut $u$, define $p\cdot u \in \mathbb R$ by:
   \item $u, v < 0$.
   \end{itemize}
 \end{lemma}
+\begin{proof}
+  By definition, we have $p_1 < u < p_2$, $q_1 < u < q_2$ such that,
+  for all $i,j \in \{1,2\}$: $0 < p_iq_j$.
+
+  Assume one of the four rationals $r > 0$, wlog it is $p_1$. Since
+  $p_1q_i > 0$, we have $q_i > 0$. By symmetry, $p_2 > 0$, so all four
+  rationals are positive.
+
+  Otherwise, all four rationals are negative.
+
+  So all four rationals are either positive, or negative. wlog, assume
+  they are all positive. In that case, $0 < p_1 < u$ and $0 < q_1 <
+  v$, so $0 < u$ and $0 < v$.
+\end{proof}
 
 \begin{lemma}
   If let $u > 0$, $v > 0$ be cuts, $a \in \mathbb Q$. If $uv > a \geq
   0$ then we have some rationals $0 < s < u$ and $0 < t < v$ such that
   $a < st$.
 \end{lemma}
+\begin{proof}
+  By assumption, we have some $p_1 < u < p_2$, $q_1 < u < q_2$
+  rationals, such that $p_iq_j > a$.
+
+  If $p_1, q_1 > 0$, we are done.  Otherwise, since $p_1q_1 > a \geq
+  0$, we must have $p_1, q_1 < 0$, but $p_2 > u > 0$ so $p_2 > 0$, and
+  symmetrically $q_2 > 0$. But then $0 > p_1q_2 > a \geq 0$,
+  contradiction. Either way, we are done.
+\end{proof}
 
 \begin{lemma}
   Let $u, v > 0$ be cuts. If $uv < 1$ then we have some rationals $0 <
   s < u$ and $0 < t < v$ such that $st < 1$ and either $s < 1$ or $t <
   1$.
 \end{lemma}
+\begin{proof}
+  Again, introduce $p_iq_j < 1$. Then $s := p_2$ and $t := q_2$
+  completes the proof.
+\end{proof}
 
 \begin{lemma}
   Let $u,v > 0$ be cuts and $p$ rational. If $1 < uv < p$, then $1 < p$.
 \end{lemma}
+\begin{proof}
+  By previous lemma, $1 < st$ with $0 < s < u$ and $0 < t < v$ rationals.
+
+  By definition, there are some $a > u$, $b > v$ with $ab < p$.
+
+  Since $u$ is a cut, $0 < s < a$, and symmetrically $0 < t < b$.
+  Therefore $1 < st < ab < p$ and $1 < p$, as we wanted.
+\end{proof}
 
 \begin{lemma}
   Let $u$,$v$ be cuts. The precut $uv$ is disjoint.
 \end{lemma}
+
+\begin{proof}
+  Assume $p < uv < q$.
+
+  \begin{itemize}
+  \item If $p = 0$, since $q > uv$, $q > 0 = p$ and we're done.
+  \item If $p < 0$, $q > 0$, we are done.
+  \item If $p > 0, q > 0$, divide by $p > 0$, use the previous lemma,
+    and multiply by $p$ to get the result.
+  \item If $p < 0, q < 0$, by symmetry we're in the previous case,
+    done.
+  \end{itemize}
+\end{proof}
 
 \begin{code}
   {-
