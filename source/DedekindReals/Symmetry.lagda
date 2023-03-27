@@ -42,14 +42,17 @@ express them in Agda without having to deal with the internals of the type-check
 \begin{code}
 module DedekindReals.Symmetry where
 
+inv-involutive : (G : Group 𝓤) → (g : ⟨ G ⟩) → inv G (inv G g) ＝ g
+inv-involutive g = {!!} -- fun to be had here
+
+data _≈_ {X : 𝓤 ̇} (x : X) : {Y : 𝓤 ̇} → (y : Y) → 𝓤 ⁺ ̇
+    where
+    NB:_since_and_ : forall {Y} (y : Y) →
+      (prf : X ＝ Y) → transport id prf x ＝ y → x ≈ y
 
 
 module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
   -- heterogeneous equality
-  data _≈_ {X : 𝓤 ̇} (x : X) : {Y : 𝓤 ̇} → (y : Y) → 𝓤 ⁺ ̇
-    where
-    NB:_since_ : forall {Y} (y : Y) →
-      (prf : X ＝ Y) → transport id prf x ＝ y → x ≈ y
 
   indexed-action-structure-over : (⟨B⟩ : ⟨ A ⟩ → 𝓤 ̇) → 𝓤 ̇
   indexed-action-structure-over ⟨B⟩ =
@@ -76,45 +79,11 @@ module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
   -- The point: an indexed action is an action on the Σ-type that
   -- lives over A
 
-  inv-involutive : (g : ⟨ G ⟩) → inv G (inv G g) ＝ g
-  inv-involutive g = {!!} -- fun to be had here
-
   as-action : {⟨B⟩ : ⟨ A ⟩ → 𝓤 ̇ } →
     indexed-action-over ⟨B⟩ → Action-structure G (Σ ⟨B⟩)
   as-action (_·_ , axioms)
     = (λ g → λ { (a , b) → (g ◂⟨ G ∣ A ⟩ a)  , (g · b)})
     , {!!} -- lots of HoTT fun to be had here
-
-  ⟨_∣_⟩-indexed-action : 𝓤 ⁺ ̇
-  ⟨_∣_⟩-indexed-action = Σ indexed-action-over
-
-  indexed-action-op-syntax : ((⟨B⟩ , rest) : ⟨_∣_⟩-indexed-action) →
-    indexed-action-structure-over  ⟨B⟩
-  indexed-action-op-syntax B = indexed-action-op B
-  syntax indexed-action-op-syntax B g y = g ◃⟨ B ⟩ y
-
-  -- The workhorse: two views
-
-  data _~[_]~* : ⟨ A ⟩ → ⟨ G ⟩ → 𝓤 ̇ where
-    take : (g : ⟨ G ⟩ ) → (x : ⟨ A ⟩) →
-      (g ◂⟨ G ∣ A ⟩ x) ~[ inv G g ]~*
-
-  data _~[[_]]~_ : ⟨ A ⟩ → ⟨ G ⟩ → ⟨ A ⟩ → 𝓤 ̇ where
-    act : (g : ⟨ G ⟩) → (a : ⟨ A ⟩) → a ~[[ g ]]~ (g ◂⟨ G ∣ A ⟩ a)
-
-  invert-action : {g : _} {x y : _} → x ~[[ g ]]~ y → y ~[[ inv G g ]]~ x
-  invert-action (act g a) = {!!} -- fun to be had here
-
-  invert-inv-action : {g : _} {x y : _} → y ~[[ inv G g ]]~ x → x ~[[ g ]]~ y
-  invert-inv-action {g} {x} {y} view =
-    transport (λ h → x ~[[ h ]]~ y)
-    (inv-involutive g)
-    (invert-action view)
-
-
-  transport2 : {X Y : 𝓤 ̇ } (A : X → Y → 𝓥 ̇ ) {x1 x2 : X} {y1 y2 : Y}
-          → x1 ＝ x2 → y1 ＝ y2 → A x1 y1 → A x2 y2
-  transport2 A refl refl x = x
 
   inv-act-inverse-left : (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
     (inv G g) ◂⟨ G ∣ A ⟩ (g ◂⟨ G ∣ A ⟩ a) ＝ a
@@ -130,7 +99,197 @@ module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
 
   inv-act-inverse-right : (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
     g ◂⟨ G ∣ A ⟩ ((inv G g) ◂⟨ G ∣ A ⟩ a) ＝ a
-  inv-act-inverse-right g a = {!!}
+  inv-act-inverse-right g a = {!!} -- fun to be had here
+
+open SymmetricProgramming public
+
+transport2 : {X Y : 𝓤 ̇ } (A : X → Y → 𝓥 ̇ ) {x1 x2 : X} {y1 y2 : Y}
+          → x1 ＝ x2 → y1 ＝ y2 → A x1 y1 → A x2 y2
+transport2 A refl refl x = x
+
+ap2 : {X Y : 𝓤 ̇ } {Z : 𝓥 ̇} (f : X → Y → Z ) {x1 x2 : X} {y1 y2 : Y}
+          → x1 ＝ x2 → y1 ＝ y2 → f x1 y1 ＝ f x2 y2
+ap2 f refl refl = refl
+
+
+-- The workhorse: promoting the group inversion and action to relations
+
+-- Convention: group elements are always inside brackets
+
+data [⟨_⟩]⟨[_]＝[_]⟩ (G : Group 𝓤) : ⟨ G ⟩ → ⟨ G ⟩ → 𝓤 ̇ where
+  invert : (g : ⟨ G ⟩) → [⟨ G ⟩]⟨[ g ]＝[ inv G g ]⟩
+
+data [⟨_∣_⟩]⟨[_]◂_＝[_]◂_⟩
+  (G : Group 𝓤) (A : Action G) : ⟨ G ⟩ → ⟨ A ⟩ → ⟨ G ⟩ → ⟨ A ⟩ → 𝓤 ̇ where
+  check : {g : ⟨ G ⟩} → {a : ⟨ A ⟩} → {h : ⟨ G ⟩} → {b : ⟨ A ⟩} →
+    g ◂⟨ G ∣ A ⟩ a ＝ h ◂⟨ G ∣ A ⟩ b
+    →
+    [⟨ G ∣ A ⟩]⟨[ g ]◂ a ＝[ h ]◂ b ⟩
+
+-- This view lets us invert the action:
+data [⟨_∣_⟩]⟨[1]◂_＝[*]◂*⟩
+  (G : Group 𝓤) (A : Action G) : ⟨ A ⟩ → 𝓤 ̇ where
+  invert' : (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+    [⟨ G ∣ A ⟩]⟨[1]◂ g ◂⟨ G ∣ A ⟩ a ＝[*]◂*⟩
+
+[⟨_∣_⟩]⟨[_]◂_＝[?]◂?⟩ : (G : Group 𝓤) (A : Action G) → (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+  [⟨ G ∣ A ⟩]⟨[1]◂ a ＝[*]◂*⟩
+[⟨ G ∣ A ⟩]⟨[ g ]◂ a ＝[?]◂?⟩ =
+  transport  [⟨ G ∣ A ⟩]⟨[1]◂_＝[*]◂*⟩
+  (inv-act-inverse-left G A g a)
+  (invert' {G = G} {A = A} (inv G g) (g ◂⟨ G ∣ A ⟩ a))
+
+{-
+[⟨_⟩]⟨[_]⟩⁻¹ : (G : Group 𝓤) → {g h : ⟨ G ⟩} →
+  [⟨ G ⟩]⟨[ g ]↔[ h ]⟩ →
+  [⟨ G ⟩]⟨[ h ]↔[ g ]⟩
+[⟨ G ⟩]⟨[ invert r ]⟩⁻¹ = transport [⟨ G ⟩]⟨[ inv G r ]↔[_]⟩
+  (inv-involutive G r)
+  (invert (inv G r))
+
+-- Now we can define some partial views
+
+data [⟨_∣_⟩]⟨_[*]↔[_]*⟩ (G : Group 𝓤) (A : Action G)
+  : (a : ⟨ A ⟩) → (x : ⟨ G ⟩) → 𝓤 ̇ where
+  ⟨[_]↔[]_⟩ : (h : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
+    [⟨ G ∣ A ⟩]⟨ inv G h ◂⟨ G ∣ A ⟩ a [*]↔[ h ]*⟩
+
+data [⟨_∣_⟩]⟨*[*]↔[_]_⟩ (G : Group 𝓤) (A : Action G)
+  : (x : ⟨ G ⟩) → (a : ⟨ A ⟩) → 𝓤 ̇ where
+  ⟨_[_]↔[]⟩ : (h : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
+    [⟨ G ∣ A ⟩]⟨*[*]↔[ h ] a ⟩
+
+
+[⟨_⟩]⟨←[_]⟩ : (G : Group 𝓤) → (g : ⟨ G ⟩) → [⟨ G ⟩]⟨[ inv G g ]↔[ g ]⟩
+[⟨ G ⟩]⟨←[ g ]⟩ = [⟨ G ⟩]⟨[ invert g ]⟩⁻¹
+
+[⟨_⟩]⟨*←[_]⟩ : (G : Group 𝓤) → (g : ⟨ G ⟩) → Σ [⟨ G ⟩]⟨[_]↔[ g ]⟩
+[⟨ G ⟩]⟨*←[ g ]⟩ = inv G g , [⟨ G ⟩]⟨←[ g ]⟩
+
+[⟨_∣_⟩]⟨_[]↔[_]⟩ : (G : Group 𝓤) (A : Action G) (a : ⟨ A ⟩) (g : ⟨ G ⟩) →
+  [⟨ G ∣ A ⟩]⟨ a [*]↔[ g ]*⟩
+[⟨ G ∣ A ⟩]⟨ a []↔[ g ]⟩ with [⟨ G ⟩]⟨*←[ g ]⟩
+[⟨ G ∣ A ⟩]⟨ a []↔[ .(inv G h) ]⟩ | h , invert .h = transport
+  [⟨ G ∣ A ⟩]⟨_[*]↔[ inv G h ]*⟩
+  (inv-act-inverse-left G A (inv G h) a)
+  (⟨[ inv G h ]↔[] inv G h ◂⟨ G ∣ A ⟩ a ⟩)
+
+[⟨_∣_⟩]⟨[]↔[_]_⟩ : (G : Group 𝓤) (A : Action G) (g : ⟨ G ⟩) (a : ⟨ A ⟩) →
+  [⟨ G ∣ A ⟩]⟨*[*]↔[ g ] a ⟩
+[⟨ G ∣ A ⟩]⟨[]↔[ g ] a ⟩ = ⟨ {!inv G g ◂⟨ G ∣ A ⟩ a!} [ {!!} ]↔[]⟩
+
+
+[⟨_∣_⟩]⟨_⟩⁻¹ : (G : Group 𝓤) → (A : Action G) → {g h : ⟨ G ⟩} → {a b : ⟨ A ⟩} →
+  [⟨ G ∣ A ⟩]⟨ a [ g ]↔[ h ] b ⟩ →
+  [⟨ G ∣ A ⟩]⟨ b [ h ]↔[ g ] a ⟩
+
+[⟨_∣_⟩]⟨_⟩⁻¹ G A {g} {.(inv G g)} {a} {.(action-op-syntax G A g a)} (act .g .a)
+  with [⟨ G ⟩]⟨*←[ g ]⟩
+[⟨_∣_⟩]⟨_⟩⁻¹ G A {.(inv G x)} {.(inv G (inv G x))} {a} {.(action-op-syntax G A (inv G x) a)} (act .(inv G x) .a) | x , invert .x =
+  transport2 ([⟨ G ∣ A ⟩]⟨ inv G x ◂⟨ G ∣ A ⟩ a  [_]↔[ inv G x ]_⟩)
+    ((inv-involutive G x)⁻¹)
+    (inv-act-inverse-right G A x a)
+    (act x (inv G x ◂⟨ G ∣ A ⟩ a))
+
+[⟨_∣_⟩]⟨[_]←_⟩ : (G : Group 𝓤) → (A : Action G) → (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+  [⟨ G ∣ A ⟩]⟨ (inv G g ◂⟨ G ∣ A ⟩ a) [ g ]↔[ inv G g ] a ⟩
+[⟨ G ∣ A ⟩]⟨[ g ]← a ⟩ = [⟨ G ∣ A ⟩]⟨ transport
+  [⟨ G ∣ A ⟩]⟨ a [ inv G g ]↔[_] inv G g ◂⟨ G ∣ A ⟩ a ⟩
+  (inv-involutive G g)
+  (act (inv G g) a) ⟩⁻¹
+
+[⟨_∣_⟩]⟨←[_]_⟩ : (G : Group 𝓤) → (A : Action G) → (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+  [⟨ G ∣ A ⟩]⟨ (g ◂⟨ G ∣ A ⟩ a) [ inv G g ]↔[ g ] a ⟩
+[⟨ G ∣ A ⟩]⟨←[ g ] a ⟩ = [⟨ G ∣ A ⟩]⟨ act g a ⟩⁻¹
+
+----------------------------
+
+{- not sure I need these
+[⟨_∣_⟩]⟨_[]→[_]⟩ : (G : Group 𝓤) → (A : Action G) → (a : ⟨ A ⟩) → (g : ⟨ G ⟩) →
+  [⟨ G ∣ A ⟩]⟨ a [ inv G g ]↔[ h ] b ⟩ ➙
+  [⟨ G ∣ A ⟩]⟨ g ◂⟨ G ∣ A ⟩ a [ g ]↔[  ] g ◂⟨ G ∣ A ⟩ a ⟩
+
+[⟨_∣_⟩]⟨_[]↔[_]⟩ : (G : Group 𝓤) → (A : Action G) → (a : ⟨ A ⟩) → (g : ⟨ G ⟩) →
+  [⟨ G ∣ A ⟩]⟨ a [ inv G g ]↔[ g ] g ◂⟨ G ∣ A ⟩ a ⟩
+[⟨ G ∣ A ⟩]⟨ a []↔[ g ]⟩ with [⟨ G ⟩]⟨*←[ g ]⟩
+[⟨ G ∣ A ⟩]⟨ a []↔[ .(inv G r) ]⟩ | r , invert .r = {![⟨ G ⟩]⟨[ ? ]⟩⁻¹!}
+-}
+-}
+
+ΣΣ : {𝓤 𝓥 𝓦 : Universe} {X : 𝓤 ̇} {Y : 𝓥 ̇} → (Z : X → Y → 𝓦 ̇) →
+  𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
+ΣΣ Z = Σ (λ x → Σ (λ y → Z x y))
+
+ΣΣΣ : {𝓤 𝓥 𝓦 𝓡 : Universe} {X : 𝓤 ̇} {Y : 𝓥 ̇} {Z : 𝓦 ̇} →
+  (R : X → Y → Z → 𝓡 ̇) →
+  𝓤 ⊔ 𝓥 ⊔ 𝓦 ⊔ 𝓡 ̇
+ΣΣΣ R = Σ (λ x → Σ (λ y → Σ (λ z → R x y z)))
+{-
+[⟨_∣_⟩]⟨*[*]←[_]_⟩ : (G : Group 𝓤) → (A : Action G) → (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+  ΣΣ [⟨ G ∣ A ⟩]⟨_[_]↔[ g ] a ⟩
+[⟨ G ∣ A ⟩]⟨*[*]←[ g ] a ⟩ = _ , _ , [⟨ G ∣ A ⟩]⟨←[ g ] a ⟩
+
+[⟨_∣_⟩]⟨[*]←[_]_⟩ : (G : Group 𝓤) → (A : Action G)  →
+  (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+  Σ [⟨ G ∣ A ⟩]⟨ (g ◂⟨ G ∣ A ⟩ a) [_]↔[ g ] a ⟩
+[⟨ G ∣ A ⟩]⟨[*]←[ g ] a ⟩ =  _ , [⟨ G ∣ A ⟩]⟨←[ g ] a ⟩
+
+[⟨_∣_⟩]⟨*←[_]_⟩ : (G : Group 𝓤) → (A : Action G)  →
+  (g : ⟨ G ⟩) → (a : ⟨ A ⟩) →
+  Σ [⟨ G ∣ A ⟩]⟨_[ inv G g ]↔[ g ] a ⟩
+[⟨ G ∣ A ⟩]⟨*←[ g ] a ⟩ =  _ , [⟨ G ∣ A ⟩]⟨←[ g ] a ⟩
+
+--     r h     r.h
+[⟨_∣_⟩]⟨_[*]←[_]*⟩ : (G : Group 𝓤) → (A : Action G)  →
+  (a : ⟨ A ⟩) → (g : ⟨ G ⟩) →
+  ΣΣ [⟨ G ∣ A ⟩]⟨ a [_]↔[ g ]_⟩
+
+[⟨_∣_⟩]⟨_[_]→[*]*⟩ : (G : Group 𝓤) → (A : Action G)  →
+  (a : ⟨ A ⟩) → (g : ⟨ G ⟩) →
+  ΣΣ [⟨ G ∣ A ⟩]⟨ a [ g ]↔[_]_⟩
+
+
+[⟨ G ∣ A ⟩]⟨ a [*]←[ g ]*⟩ with [⟨ G ⟩]⟨*←[ g ]⟩
+[⟨ G ∣ A ⟩]⟨ a [*]←[ .(inv G r) ]*⟩ | r , invert .r = _ , _ , act r a
+
+[⟨_∣_⟩]⟨_[_]↔[*]*⟩ : (G : Group 𝓤) → (A : Action G) →
+  (a : ⟨ A ⟩ ) →
+           (g : ⟨ G ⟩) →
+         ΣΣ [⟨ G ∣ A ⟩]⟨ a [ g ]↔[_]_⟩
+[⟨ G ∣ A ⟩]⟨ a [ g ]↔[*]*⟩ = {!!}
+
+
+-}
+⟨_∣_⟩-indexed-action : (G : Group 𝓤) → (A : Action G) → 𝓤 ⁺ ̇
+⟨ A ∣ G ⟩-indexed-action = Σ (indexed-action-over A G)
+
+⟨_⟩-indexed-action : {G : Group 𝓤} → (A : Action G) → 𝓤 ⁺ ̇
+⟨_⟩-indexed-action {G = G} A = ⟨ G ∣ A ⟩-indexed-action
+
+indexed-action-op-syntax : (G : Group 𝓤) (A : Action G) →
+    ((⟨B⟩ , rest) : ⟨ G ∣ A ⟩-indexed-action) →
+    indexed-action-structure-over G A  ⟨B⟩
+indexed-action-op-syntax {𝓤} G A B = indexed-action-op G A B
+syntax indexed-action-op-syntax G A B g y = g ◃⟨ G ∣ A ∣ B ⟩ y
+
+return-fun : (G : Group 𝓤) → (A : Action G) →
+           ((⟨B⟩ , foo) : ⟨ G ∣ A ⟩-indexed-action) → (a : ⟨ A ⟩ ) →
+           (g : ⟨ G ⟩) →
+           (⟨B⟩ (g ◂⟨ G ∣ A ⟩ a) → ⟨B⟩ a)
+return-fun G A B a g result = {!!} {-with [⟨ G ∣ A ⟩]⟨ g ◂⟨ G ∣ A ⟩ a []↔[ g ]⟩
+return-fun G A B a g result | foo = {!foo!}
+
+return-fun G A B@(⟨B⟩ , _) .(h ◂⟨ G ∣ A ⟩ x) .(inv G h) result | take h x
+    = transport ⟨B⟩ (inv-act-inverse-right G A h _) (h ◃⟨ G ∣ A ∣ B ⟩ result)
+
+-}
+{-
+  --- I think this is subsumed
+  invert-inv-action : {g : _} {x y : _} → y ~[[ inv G g ]]~ x → x ~[[ g ]]~ y
+  invert-inv-action {g} {x} {y} view =
+    transport (λ h → x ~[[ h ]]~ y)
+    (inv-involutive g)
+    (invert-action view)
 
   ekat : (g : ⟨ G ⟩) → (a : ⟨ A ⟩) → a ~[ g ]~*
   ekat g a = transport2 (λ x h → x ~[ h ]~*)
@@ -138,33 +297,234 @@ module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
     (inv-involutive g)
     (take (inv G g) (g ◂⟨ G ∣ A ⟩ a))
 
-  return-fun : ((⟨B⟩ , foo) : ⟨_∣_⟩-indexed-action) → (a : ⟨ A ⟩ ) →
-           (g : ⟨ G ⟩) →
-           (⟨B⟩ (g ◂⟨ G ∣ A ⟩ a) → ⟨B⟩ a)
-  return-fun B a g result with (ekat g a)
-  return-fun B@(⟨B⟩ , _) .(h ◂⟨ G ∣ A ⟩ x) .(inv G h) result | take h x
-    = transport ⟨B⟩ (inv-act-inverse-right h _) (h ◃⟨ B ⟩ result)
-
-  out-log : ((⟨B⟩ , foo) : ⟨_∣_⟩-indexed-action) → (a : ⟨ A ⟩ ) →
-           (g : ⟨ G ⟩) →
-           (a ~[ g ]~*)
-           × (⟨B⟩ (g ◂⟨ G ∣ A ⟩ a) → ⟨B⟩ a)
-  out-log B a g = ekat g a , return-fun B a g
 
 
-{-with (ekat g a)
-         ... | foo = ?-}
+
+out-log : (G : Group 𝓤) → (A : Action G) →
+          ((⟨B⟩ , foo) : ⟨ G ∣ A ⟩-indexed-action) → (a : ⟨ A ⟩ ) →
+          (g : ⟨ G ⟩) →
+          (a ~[ g ]~*)
+          × (⟨B⟩ (g ◂⟨ G ∣ A ⟩ a) → ⟨B⟩ a)
+out-log G A B a g = ekat G A g a , return-fun G A B a g
+
+-}
+
+module GenericActions {𝓤 : Universe} where
+
+  data ⟨S₂⟩ : 𝓤 ̇  where
+    id∈S₂  flip : ⟨S₂⟩
+
+  _﹔_ : (x y : ⟨S₂⟩) → ⟨S₂⟩
+  id∈S₂ ﹔ y = y
+  flip ﹔ id∈S₂ = flip
+  flip ﹔ flip = id∈S₂
+
+  assoc-﹔ : associative _﹔_
+  assoc-﹔ id∈S₂ id∈S₂ z = refl
+  assoc-﹔ id∈S₂ flip id∈S₂ = refl
+  assoc-﹔ id∈S₂ flip flip = refl
+  assoc-﹔ flip id∈S₂ id∈S₂ = refl
+  assoc-﹔ flip id∈S₂ flip = refl
+  assoc-﹔ flip flip id∈S₂ = refl
+  assoc-﹔ flip flip flip = refl
+
+  left-neutral-﹔ : left-neutral id∈S₂ _﹔_
+  left-neutral-﹔ x = refl
+
+  right-neutral-﹔ : right-neutral id∈S₂ _﹔_
+  right-neutral-﹔ id∈S₂ = refl
+  right-neutral-﹔ flip = refl
+
+  inv-S₂ : ⟨S₂⟩ → ⟨S₂⟩
+  inv-S₂ x = x
+
+  inv-left-﹔ : (x : ⟨S₂⟩) → (inv-S₂ x) ﹔ x ＝ id∈S₂
+  inv-left-﹔ id∈S₂ = refl
+  inv-left-﹔ flip = refl
+
+  inv-right-﹔ : (x : ⟨S₂⟩) → x ﹔ (inv-S₂ x)  ＝ id∈S₂
+  inv-right-﹔ id∈S₂ = refl
+  inv-right-﹔ flip = refl
+
+
+  S₂ : Group (𝓤)
+  S₂ = ⟨S₂⟩ , (_﹔_
+            , (λ {refl refl → refl})
+            , (assoc-﹔
+            , (id∈S₂
+            , left-neutral-﹔
+            , right-neutral-﹔
+            , λ x → inv-S₂ x
+                  , inv-left-﹔ x
+                  , inv-right-﹔ x
+                  )))
+
+  _◂⟨S₂∣_²⟩_ : (π : ⟨S₂⟩) → (a : 𝓤 ̇) → a × a → a × a
+  id∈S₂ ◂⟨S₂∣ a ²⟩ xy = xy
+  flip  ◂⟨S₂∣ a ²⟩ (x , y) = y , x
+
+  assoc-⟨S₂∣_²⟩ : (a : 𝓤 ̇) → is-assoc S₂ _◂⟨S₂∣ a ²⟩_
+  assoc-⟨S₂∣ a ²⟩ id∈S₂ h x = refl
+  assoc-⟨S₂∣ a ²⟩ flip id∈S₂ x = refl
+  assoc-⟨S₂∣ a ²⟩ flip flip x = refl
+
+  unital-⟨S₂∣_²⟩ : (a : 𝓤 ̇) → is-unital S₂ _◂⟨S₂∣ a ²⟩_
+  unital-⟨S₂∣ a ²⟩ x = refl
+
+  Flip : (a : 𝓤 ̇) → (is-set a) → Action S₂
+  Flip a aSet = (a × a) , (_◂⟨S₂∣ a ²⟩_)
+         , ×-is-set aSet aSet
+         , assoc-⟨S₂∣ a ²⟩
+         , unital-⟨S₂∣ a ²⟩
+
+  ptwise : {X Y Z U V W : 𝓤 ̇} → (X → Y → Z) → (U → V → W) → (X × U → Y × V → Z × W)
+  ptwise f g (x , u) (y , v) = (f x y) , (g u v)
+
+  ptwise-group-structure : (G H : Group 𝓤) → group-structure (⟨ G ⟩ × ⟨ H ⟩)
+  ptwise-group-structure G H  = ptwise (multiplication G) (multiplication H)
+
+  assoc-ptwise : (G H : Group 𝓤) →  associative (ptwise-group-structure G H)
+  assoc-ptwise G H x y z = ap2 _,_ (assoc G (pr₁ x) (pr₁ y) (pr₁ z))
+                                   (assoc H (pr₂ x) (pr₂ y) (pr₂ z))
+  left-neutral-ptwise : (G H : Group 𝓤) →
+    left-neutral (unit G , unit H) (ptwise-group-structure G H)
+  left-neutral-ptwise G H x = ap2 _,_ (unit-left G (pr₁ x))
+                                      (unit-left H (pr₂ x))
+
+  right-neutral-ptwise : (G H : Group 𝓤) →
+    right-neutral (unit G , unit H) (ptwise-group-structure G H)
+  right-neutral-ptwise G H x = ap2 _,_ (unit-right G (pr₁ x))
+                                       (unit-right H (pr₂ x))
+  _⊗_ : (G H : Group 𝓤) → Group 𝓤
+  G ⊗ H = (⟨ G ⟩ × ⟨ H ⟩) , (ptwise-group-structure G H
+        , ×-is-set (group-is-set G) (group-is-set H)
+        , (assoc-ptwise G H
+        , ((unit G , unit H)
+        , (left-neutral-ptwise G H
+        , (right-neutral-ptwise G H
+        , (λ {x → (inv G (pr₁ x) , inv H (pr₂ x))
+               , ((ap2 _,_ (inv-left G (pr₁ x)) (inv-left H (pr₂ x)))
+               ,  (ap2 _,_ (inv-right G (pr₁ x)) (inv-right H (pr₂ x))))}))))))
+
+  ∣_×_ : {G H : Group 𝓤} → (A : Action G) → (B : Action H) →
+    Action (G ⊗ H)
+  ∣_×_ {G} {H} A B
+    = (⟨ A ⟩ × ⟨ B ⟩)
+      , ((ptwise (action-op G A) (action-op H B))
+      , (×-is-set (carrier-is-set G A) (carrier-is-set H B))
+      , (λ x y w → ap2 _,_ (action-assoc G A (pr₁ x) (pr₁ y) (pr₁ w))
+                           (action-assoc H B (pr₂ x) (pr₂ y) (pr₂ w)))
+      , λ w → ap2 _,_ (action-unit G A  (pr₁ w))
+                      (action-unit H B (pr₂ w)))
+
+  -- Every constant set has an indexed action:
+  const-action : (G : Group 𝓤) → (A : Action G) →
+    (⟨B⟩ : 𝓤 ̇) → is-set ⟨B⟩ → indexed-action G A
+  const-action G A ⟨B⟩ ⟨B⟩set
+    = (λ _ → ⟨B⟩)
+    , (λ g b → b)
+    , (λ a → ⟨B⟩set)
+    , (λ g h b → NB: b since refl and refl)
+    , λ b → NB: b since refl and refl
+
+  is-dep-equivariant : (G : Group 𝓤) → (A : Action G) →
+    ((⟨B⟩ , structure) : ⟨ G ∣ A ⟩-indexed-action) →
+    (f : (a : ⟨ A ⟩) → ⟨B⟩ a) → 𝓤 ⁺ ̇
+  is-dep-equivariant G A B f
+    = (g : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
+    (f (g ◂⟨ G ∣ A ⟩ a)) ≈ (g ◃⟨ G ∣ A ∣ B ⟩ (f a))
+
+  invariant : (G : Group 𝓤) → (A : Action G) →
+    (⟨B⟩ : 𝓤 ̇) → is-set ⟨B⟩ →
+    (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ⁺ ̇
+  invariant G A ⟨B⟩ ⟨B⟩set f =
+    is-dep-equivariant G A (const-action G A ⟨B⟩ ⟨B⟩set) f
+
+open GenericActions public
 
 module Multiplication
          (pe : Prop-Ext)
          (pt : propositional-truncations-exist)
          (fe : Fun-Ext)
+         (nfe : ∀ {𝓤 𝓥} → DN-funext 𝓤 𝓥)
        where
 
    open import Rationals.Multiplication renaming (_*_ to _ℚ*_)
    open import Rationals.MinMax fe
    open import DedekindReals.Type pe pt fe
    open PropositionalTruncation pt
+
+   _⇒_ : {X : 𝓤 ̇} → (x y : 𝓟 X) →  𝓟 X
+   U ⇒ V = λ x → (⟨ U x ⟩ → ⟨ V x ⟩) , λ a b → nfe (λ u → {!pr₂ V!})
+
+
+   -- Just an example --- I don't have a good feel for how teverything
+   -- is set-up with dedekind cuts
+   module Relations (X : 𝓤₀ ̇) (Xset : is-set X) where
+     PreRel : 𝓤₀ ⁺ ̇
+     PreRel = X × X → 𝓤₀ ̇
+
+     pointwise-prop : PreRel → 𝓤₀ ̇
+     pointwise-prop R = (x y : X) → is-prop (R (x , y))
+
+     Rel : 𝓤₀ ⁺ ̇
+     Rel = Σ pointwise-prop
+
+     opposite : Rel → Rel
+     opposite (⟨R⟩ , props) =
+       (λ xy → ⟨R⟩ (flip ◂⟨ S₂ ∣ Flip X Xset  ⟩ xy))
+       , λ x y x=₁y x=₂y → props y x x=₁y x=₂y
+
+     _◂⟨S₂∣Rel⟩_ : action-structure S₂ Rel
+     id∈S₂ ◂⟨S₂∣Rel⟩ R = R
+     flip  ◂⟨S₂∣Rel⟩ R = opposite R
+
+     assoc-Rel : is-assoc S₂ _◂⟨S₂∣Rel⟩_
+     assoc-Rel id∈S₂ h x = refl
+     assoc-Rel flip id∈S₂ x = refl
+     assoc-Rel flip flip x = refl
+
+     unital-Rel : is-unital S₂ _◂⟨S₂∣Rel⟩_
+     unital-Rel x = refl
+
+     RelIsSet : is-set Rel
+     RelIsSet = {!-- should be able to set things up so this is true!}
+     universeIsSet : is-set (𝓤₀ ̇)
+     universeIsSet = {!-- This definitely isn't true, need to rethink the set-up!}
+
+     S₂onRel : Action-structure S₂ Rel
+     S₂onRel = _◂⟨S₂∣Rel⟩_
+             , RelIsSet
+             , assoc-Rel
+             , unital-Rel
+
+     S₂∣Rel : Action (S₂ {𝓤 = 𝓤₀ ⁺})
+     S₂∣Rel = Rel , S₂onRel
+
+
+     transitive-rel : 𝓟 Rel
+     transitive-rel (⟨R⟩ , rel) =
+       {!!} --(x y z : X) → ⟨R⟩ (x , y) → ⟨R⟩ (y , z) → ⟨R⟩ (x , z)
+
+{-
+
+     invariant-transitive :
+       (R : Rel) →
+       invariant S₂ S₂∣Rel (𝓤₀ ̇) universeIsSet
+         transitive-rel
+     invariant-transitive R id∈S₂ a
+       = NB: (transitive-rel a) since refl and refl
+     invariant-transitive R@(⟨R⟩ , struct) flip a
+       = NB: {!-- I think this goes here
+         flip ◃⟨ S₂ {𝓤 = 𝓤₀ ⁺}  ∣ S₂∣Rel ∣ const-action S₂ S₂∣Rel (𝓤₀ ̇) universeIsSet ⟩ transitive-rel a!}
+           since refl and
+         {!-- some HoTT fun. We ought to be able to postulate that
+          -- transitivity is a proposition, and then show that a relation is transitive iff its opposite is transitive !}
+-}
+   pre-cut : 𝓤₁ ̇
+   pre-cut =  𝓟 ℚ × 𝓟 ℚ
+
+
 
    \end{code}
 

@@ -44,10 +44,16 @@ module _ (G : Group 𝓤) where
   action-structure : 𝓤 ̇ → 𝓤 ̇
   action-structure X = ⟨ G ⟩ → X → X
 
+  is-assoc : {X : 𝓤 ̇} → action-structure X → 𝓤 ̇
+  is-assoc {X} _·_ = ((g h : ⟨ G ⟩)(x : X) → (g ·⟨ G ⟩ h) · x ＝ g · (h · x))
+
+  is-unital : {X : 𝓤 ̇} → action-structure X → 𝓤 ̇
+  is-unital {X} _·_ = ((x : X) → (unit G) · x ＝ x)
+
   action-axioms : (X : 𝓤 ̇ )→ action-structure X → 𝓤 ̇
   action-axioms X _·_ = is-set X ×
-                        ((g h : ⟨ G ⟩)(x : X) → (g ·⟨ G ⟩ h) · x ＝ g · (h · x)) ×
-                        ((x : X) → (unit G) · x ＝ x)
+                        is-assoc _·_ ×
+                        is-unital _·_
 
   Action-structure : 𝓤 ̇ → 𝓤 ̇
   Action-structure X = Σ _·_ ꞉ action-structure X , (action-axioms X _·_)
