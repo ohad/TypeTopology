@@ -27,8 +27,16 @@ open import UF.Subsingletons-FunExt
 open import UF.UA-FunExt
 open import UF.Univalence
 
+-- We sometimes need a heterogeneous version of the powerset
+𝓟' : 𝓤 ̇ → 𝓤 ⊔ (𝓥 ⁺) ̇
+𝓟' {𝓤} {𝓥} X = X → Ω 𝓥
+
 𝓟 : 𝓤 ̇ → 𝓤 ⁺ ̇
-𝓟 {𝓤} X = X → Ω 𝓤
+𝓟 {𝓤} = 𝓟' {𝓤}
+
+𝓟'-is-set' : funext 𝓤 (𝓥 ⁺) → funext 𝓥 𝓥 → propext 𝓥 → {X : 𝓤 ̇ } → is-set (𝓟' {𝓥 = 𝓥} X)
+𝓟'-is-set' = powersets-are-sets''
+
 
 𝓟-is-set' : funext 𝓤 (𝓤 ⁺) → propext 𝓤 → {X : 𝓤 ̇ } → is-set (𝓟 X)
 𝓟-is-set' = powersets-are-sets

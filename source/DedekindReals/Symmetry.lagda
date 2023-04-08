@@ -77,6 +77,10 @@ sigma-eq : forall {X : 𝓤 ̇} {x₁ x₂}
   x₁ ＝ x₂ → y₁ ≈ y₂ → (x₁ , y₁) ＝ (x₂ , y₂)
 sigma-eq refl (NB: _ since refl and refl) = refl
 
+equiv-by-eq : forall {𝓤 𝓥 : Universe} {X : 𝓥 ̇} {A : X → 𝓤 ̇}
+           {f g : (x : X) → A x} → f ＝ g →
+            f ∼ g
+equiv-by-eq refl x = refl
 
 module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
   -- heterogeneous equality
@@ -528,12 +532,14 @@ module Multiplication
      ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
    ptwise-is-prop' {F = F} = ptwise-is-prop F
 
-   _⇒_ : {X : 𝓤 ̇} → (x y : 𝓟 X) →  𝓟 X
+   _⇒_ : {𝓤 𝓥 : Universe}
+     {X : 𝓤 ̇} → (x y : 𝓟' {𝓤} {𝓥} X) →  𝓟' {𝓤} {𝓥} X
    _⇒_ {𝓤} {X} U V
      = λ x → (⟨ U x ⟩ → ⟨ V x ⟩)
      , ptwise-is-prop (λ _ → ⟨ V x ⟩) λ _ → holds-is-prop (V x)
 
-   prop-eq : {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟 X) →
+   prop-eq : {𝓤 𝓥 : Universe}
+     {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟' {𝓤} {𝓥} X) →
      ((x : X) → ⟨ (P ⇒ Q) x ⟩ × ⟨ (Q ⇒ P) x ⟩) → P ＝ Q
    prop-eq {X = X} X-is-set P Q ptwise = nfe-by-fe fe (λ x → sigma-eq
      (foo x)
@@ -634,78 +640,45 @@ module Multiplication
         rel x z)))))
 
    open Relations
-   transitive-is-invariant : (X : 𝓤₀ ̇) → (X-is-set : is-set X) →
-     invariant
-       (Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺}))
-       (Lift-action (𝓤₀ ⁺⁺)
-                    (S₂ {𝓤₀ ⁺})
-                    (S₂∣Rel X X-is-set))
+   module Transitivity (X : 𝓤₀ ̇) (X-is-set : is-set X) where
+     -- Let's set things up. First, we need to promote
+     -- the group and action to the same level:
+
+     S₂' : Group (𝓤₀ ⁺⁺)
+     S₂' = Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺})
+
+     S₂'∣Rel' : Action S₂'
+     S₂'∣Rel' = Lift-action (𝓤₀ ⁺⁺) S₂ (S₂∣Rel X X-is-set)
+
+     Rel'IsSet : is-set ⟨ S₂'∣Rel' ⟩
+     Rel'IsSet = Lift-is-set (𝓤₀ ⁺⁺)
+                 (Rel X X-is-set)
+                 (RelIsSet X X-is-set)
+
+     transitive-is-invariant : invariant
+       S₂' S₂'∣Rel'
        (Ω (𝓤₀ ⁺)) prop-is-set
-       λ R → transitive-rel X X-is-set
-         (lower R)
-   transitive-is-invariant X X-is-set =
-     invariant-by-invariant'
-       ((Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺})))
-       ((Lift-action (𝓤₀ ⁺⁺)
-                    (S₂ {𝓤₀ ⁺})
-                    (S₂∣Rel X X-is-set)))
+       (transitive-rel X X-is-set ∘ lower)
+
+     transitive-is-invariant =
+       invariant-by-invariant' S₂' S₂'∣Rel'
        (Ω (𝓤₀ ⁺))
        prop-is-set
-       (λ R → transitive-rel X X-is-set
-         (lower R))
-         let u = (Lift-is-set (𝓤₀ ⁺) (Rel X X-is-set) (RelIsSet X X-is-set)) in
-         λ { (id∈S₂ , ⋆) → foo
-           let v = prop-eq
-                   u
-                   (T2 (lift ((𝓤₀ ⁺) ⁺) id∈S₂))
-                   (T1 (lift ((𝓤₀ ⁺) ⁺) id∈S₂))
-                   (λ R → ((λ tr → (pr₁ tr) ,
-                     ⋆) ,
-                     λ tr' → ((pr₁ tr') , ⋆)))
-           in {!v -- *sigh* level mismatch!}
-           ; (flip , ⋆) →
-           let v = prop-eq
-                   u
-                   (T2 (lift ((𝓤₀ ⁺) ⁺) flip))
-                   (T1 (lift ((𝓤₀ ⁺) ⁺) flip))
-                   (λ R → ((λ tr → (λ x y z xRy yRz →
-                               pr₁ tr z y x yRz xRy) ,
-                     ⋆) ,
-                     λ tr' → (((λ x y z xRy yRz →
-                               pr₁ tr' z y x yRz xRy)) , ⋆)))
-           in {!v -- *sigh* level mismatch!} }
-     where
-       foo : forall {𝓥 : Universe} {X : 𝓥 ̇} {A : X → 𝓤 ̇}
-         {f g : (x : X) → A x} → f ＝ g →
-          f ∼ g
-       foo refl x = refl
+       (transitive-rel X X-is-set ∘ lower)
+         λ { (id∈S₂ , ⋆) → equiv-by-eq
+           (ap (_∘ lower) refl)
+           ; (flip , ⋆) → equiv-by-eq
+           (ap (_∘ lower)
+             (prop-eq (RelIsSet X X-is-set)
+               (transitive-rel X X-is-set ∘
+                 (λ R → flip ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ R) )
+               (transitive-rel X X-is-set)
+               λ R → (λ tr → lift _ (λ x y z xRy yRz →
+                                lower tr z y x yRz xRy))
+                     , λ trᵒᵖ → lift _ λ x y z xRᵒᵖy yRᵒᵖz →
+                                lower trᵒᵖ z y x yRᵒᵖz xRᵒᵖy))
+           }
 
-       T1 T2 : (g : ⟨ Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺}) ⟩) →
-          𝓟 (Lift (𝓤₀ ⁺) (Rel X X-is-set))
-          --(R : Lift (𝓤₀ ⁺⁺) (Rel X X-is-set)) → Ω (𝓤₀ ⁺)
-       T1 g R = transitive-rel X X-is-set (lower R)
-       T2 g R = transitive-rel X X-is-set
-         (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ (lower R))
-       {-
-       foo : T1 (lift ((𝓤₀ ⁺) ⁺) (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower R))  ＝ T2 R
-       foo = ap (λ f → f {!R!})
-         (prop-eq (RelIsSet X X-is-set) {!!} {!!} {!!})
-         -}
-{-
-
-     invariant-transitive :
-       (R : Rel) →
-       invariant S₂ S₂∣Rel (𝓤₀ ̇) universeIsSet
-         transitive-rel
-     invariant-transitive R id∈S₂ a
-       = NB: (transitive-rel a) since refl and refl
-     invariant-transitive R@(⟨R⟩ , struct) flip a
-       = NB: {!-- I think this goes here
-         flip ◃⟨ S₂ {𝓤 = 𝓤₀ ⁺}  ∣ S₂∣Rel ∣ const-action S₂ S₂∣Rel (𝓤₀ ̇) universeIsSet ⟩ transitive-rel a!}
-           since refl and
-         {!-- some HoTT fun. We ought to be able to postulate that
-          -- transitivity is a proposition, and then show that a relation is transitive iff its opposite is transitive !}
--}
    pre-cut : 𝓤₁ ̇
    pre-cut =  𝓟 ℚ × 𝓟 ℚ
 
