@@ -82,6 +82,66 @@ equiv-by-eq : forall {𝓤 𝓥 : Universe} {X : 𝓥 ̇} {A : X → 𝓤 ̇}
             f ∼ g
 equiv-by-eq refl x = refl
 
+-- Must already exist somewhere
+nfe-by-fe : {𝓤 𝓥 : Universe} → funext 𝓤 𝓥 → DN-funext 𝓤 𝓥
+nfe-by-fe fe {f = f} {g = g} x = pr₁ (pr₁ (fe f g)) x
+
+lift-is-prop : {X : 𝓤 ̇} → is-prop X → is-prop (Lift 𝓥 X)
+lift-is-prop {𝓤} {𝓥} {X} X-is-prop lx ly =
+  lx ＝⟨ (η-Lift 𝓥 lx)⁻¹ ⟩
+  lift 𝓥 (lower lx) ＝⟨ ap (lift 𝓥)
+                         (X-is-prop (lower lx) (lower ly)) ⟩
+  lift 𝓥 (lower ly) ＝⟨ η-Lift 𝓥 ly ⟩
+  ly ∎
+
+prop-is-set : {𝓤 : Universe} →
+  is-set (Ω 𝓤)
+prop-is-set {𝓤} {P} {.P} refl refl = refl
+
+prop-is-prop : {𝓤 : Universe} → (X : 𝓤 ̇) → (X-is-set : is-set X) →
+  (fe : funext 𝓤 𝓤) →
+  is-prop (is-prop X)
+prop-is-prop {𝓤} X X-is-set fe prf1 prf2 = nfe-by-fe fe
+  (λ x → nfe-by-fe fe
+  (λ y → X-is-set (prf1 x y) (prf2 x y)))
+
+module SurelyThisExistsSomewhere
+  (pe : Prop-Ext)
+  (fe : Fun-Ext)
+  where
+  ptwise-is-prop : {X : 𝓤 ̇} → (F : X → 𝓤 ̇) →
+     ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
+  ptwise-is-prop F ptwise f g =
+     nfe-by-fe fe (λ x → ptwise x (f x) (g x))
+  ptwise-is-prop' : {X : 𝓤 ̇} → {F : X → 𝓤 ̇} →
+     ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
+  ptwise-is-prop' {F = F} = ptwise-is-prop F
+  _⇒_ : {𝓤 𝓥 : Universe}
+     {X : 𝓤 ̇} → (x y : 𝓟' {𝓤} {𝓥} X) →  𝓟' {𝓤} {𝓥} X
+  _⇒_ {𝓤} {X} U V
+     = λ x → (⟨ U x ⟩ → ⟨ V x ⟩)
+     , ptwise-is-prop (λ _ → ⟨ V x ⟩) λ _ → holds-is-prop (V x)
+  prop-eq : {𝓤 𝓥 : Universe}
+     {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟' {𝓤} {𝓥} X) →
+     ((x : X) → ⟨ (P ⇒ Q) x ⟩ × ⟨ (Q ⇒ P) x ⟩) → P ＝ Q
+  prop-eq {X = X} X-is-set P Q ptwise = nfe-by-fe fe (λ x → sigma-eq
+     (foo x)
+     (NB: pr₂ (Q x) since (ap is-prop (foo x))
+      and prop-is-prop (pr₁ (Q x))
+          (props-are-sets (pr₂ (Q x)))
+          -- what a mess
+          fe (transport id
+             (transport (λ y → is-prop (pr₁ (P x)) ＝ is-prop y)
+             (pe (pr₂ (P x)) (pr₂ (Q x)) (pr₁ (ptwise x)) (pr₂ (ptwise x)))
+             refl)
+             (pr₂ (P x))) (pr₂ (Q x))))
+     where
+       foo : (x : X) → pr₁ (P x) ＝ pr₁ (Q x)
+       foo x = (pe (pr₂ (P x)) (pr₂ (Q x))
+              (pr₁ (ptwise x)) (pr₂ (ptwise x)))
+open SurelyThisExistsSomewhere
+
+
 module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
   -- heterogeneous equality
 
@@ -487,28 +547,33 @@ module GenericActions {𝓤 : Universe} where
     hetero-by-homo (inv' g a)
 open GenericActions public
 
--- Must already exist somewhere
-nfe-by-fe : {𝓤 𝓥 : Universe} → funext 𝓤 𝓥 → DN-funext 𝓤 𝓥
-nfe-by-fe fe {f = f} {g = g} x = pr₁ (pr₁ (fe f g)) x
-
-lift-is-prop : {X : 𝓤 ̇} → is-prop X → is-prop (Lift 𝓥 X)
-lift-is-prop {𝓤} {𝓥} {X} X-is-prop lx ly =
-  lx ＝⟨ (η-Lift 𝓥 lx)⁻¹ ⟩
-  lift 𝓥 (lower lx) ＝⟨ ap (lift 𝓥)
-                         (X-is-prop (lower lx) (lower ly)) ⟩
-  lift 𝓥 (lower ly) ＝⟨ η-Lift 𝓥 ly ⟩
-  ly ∎
-
-prop-is-set : {𝓤 : Universe} →
-  is-set (Ω 𝓤)
-prop-is-set {𝓤} {P} {.P} refl refl = refl
-
-prop-is-prop : {𝓤 : Universe} → (X : 𝓤 ̇) → (X-is-set : is-set X) →
-  (fe : funext 𝓤 𝓤) →
-  is-prop (is-prop X)
-prop-is-prop {𝓤} X X-is-set fe prf1 prf2 = nfe-by-fe fe
-  (λ x → nfe-by-fe fe
-  (λ y → X-is-set (prf1 x y) (prf2 x y)))
+-- For propositions, we can get therefore get invariance more easily
+invariant-proposition :
+    (pe : Prop-Ext) (fe : Fun-Ext)
+    {𝓤 : Universe} →
+    (G : Group (𝓤 ⁺)) → (A : Action G) →
+    (f : ⟨ A ⟩ → Ω 𝓤) →
+    ((g : ⟨ G ⟩) → (a : ⟨ A ⟩) → ⟨ f a ⟩ → ⟨ f (g ◂⟨ G ∣ A ⟩ a) ⟩) →
+    invariant {𝓤 ⁺} G A (Ω 𝓤) prop-is-set f
+invariant-proposition pe fe {𝓤} G A P prf =
+  invariant-by-invariant'
+    G A (Ω 𝓤) prop-is-set P λ g →
+    equiv-by-eq
+    (prop-eq pe fe
+    (carrier-is-set G A) (P ∘ (λ a → g ◂⟨ G ∣ A ⟩ a)) P
+      λ a → (λ ⟨Pga⟩ →
+      transport (λ b → ⟨ P b ⟩)
+        (inv G g ◂⟨ G ∣ A ⟩ (g ◂⟨ G ∣ A ⟩ a)
+          ＝⟨ (action-assoc G A (inv G g) g a) ⁻¹ ⟩
+        (inv G g ·⟨ G ⟩ g)     ◂⟨ G ∣ A ⟩ a
+          ＝⟨ ap (λ h → h ◂⟨ G ∣ A ⟩ a )
+                 (inv-left G g) ⟩
+        unit G ◂⟨ G ∣ A ⟩ a
+          ＝⟨  action-unit G A a ⟩
+        a ∎)
+        (prf (inv G g) (g ◂⟨ G ∣ A ⟩ a) ⟨Pga⟩))
+      ,
+      λ ⟨Pa⟩ → prf g a ⟨Pa⟩)
 
 module Multiplication
          (pe : Prop-Ext)
@@ -523,39 +588,6 @@ module Multiplication
    open PropositionalTruncation pt
 
    -- Surely this exists somewhere?
-   ptwise-is-prop : {X : 𝓤 ̇} → (F : X → 𝓤 ̇) →
-     ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
-   ptwise-is-prop F ptwise f g =
-     nfe-by-fe fe (λ x → ptwise x (f x) (g x))
-
-   ptwise-is-prop' : {X : 𝓤 ̇} → {F : X → 𝓤 ̇} →
-     ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
-   ptwise-is-prop' {F = F} = ptwise-is-prop F
-
-   _⇒_ : {𝓤 𝓥 : Universe}
-     {X : 𝓤 ̇} → (x y : 𝓟' {𝓤} {𝓥} X) →  𝓟' {𝓤} {𝓥} X
-   _⇒_ {𝓤} {X} U V
-     = λ x → (⟨ U x ⟩ → ⟨ V x ⟩)
-     , ptwise-is-prop (λ _ → ⟨ V x ⟩) λ _ → holds-is-prop (V x)
-
-   prop-eq : {𝓤 𝓥 : Universe}
-     {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟' {𝓤} {𝓥} X) →
-     ((x : X) → ⟨ (P ⇒ Q) x ⟩ × ⟨ (Q ⇒ P) x ⟩) → P ＝ Q
-   prop-eq {X = X} X-is-set P Q ptwise = nfe-by-fe fe (λ x → sigma-eq
-     (foo x)
-     (NB: pr₂ (Q x) since (ap is-prop (foo x))
-      and prop-is-prop (pr₁ (Q x))
-          (props-are-sets (pr₂ (Q x)))
-          -- what a mess
-          fe (transport id
-             (transport (λ y → is-prop (pr₁ (P x)) ＝ is-prop y)
-             (pe (pr₂ (P x)) (pr₂ (Q x)) (pr₁ (ptwise x)) (pr₂ (ptwise x)))
-             refl)
-             (pr₂ (P x))) (pr₂ (Q x))))
-     where
-       foo : (x : X) → pr₁ (P x) ＝ pr₁ (Q x)
-       foo x = (pe (pr₂ (P x)) (pr₂ (Q x))
-              (pr₁ (ptwise x)) (pr₂ (ptwise x)))
    module Lifting (𝓥 : Universe) where
      Lift-group : Group 𝓤 → Group (𝓤 ⊔ 𝓥)
      Lift-group G
@@ -632,11 +664,11 @@ module Multiplication
       Lift (𝓤₀ ⁺)
         ((x y z : X) → ⟨R⟩ (x , y) → ⟨R⟩ (y , z) → ⟨R⟩ (x , z))
       , lift-is-prop (
-        ptwise-is-prop' λ x →
-        ptwise-is-prop' (λ y →
-        ptwise-is-prop' (λ z →
-        ptwise-is-prop' (λ x-R-y →
-        ptwise-is-prop' (λ y-R-z →
+        ptwise-is-prop' pe fe λ x →
+        ptwise-is-prop' pe fe (λ y →
+        ptwise-is-prop' pe fe (λ z →
+        ptwise-is-prop' pe fe (λ x-R-y →
+        ptwise-is-prop' pe fe (λ y-R-z →
         rel x z)))))
 
    open Relations
@@ -659,25 +691,19 @@ module Multiplication
        S₂' S₂'∣Rel'
        (Ω (𝓤₀ ⁺)) prop-is-set
        (transitive-rel X X-is-set ∘ lower)
-
      transitive-is-invariant =
-       invariant-by-invariant' S₂' S₂'∣Rel'
-       (Ω (𝓤₀ ⁺))
-       prop-is-set
+       invariant-proposition pe fe S₂' S₂'∣Rel'
        (transitive-rel X X-is-set ∘ lower)
-         λ { (id∈S₂ , ⋆) → equiv-by-eq
-           (ap (_∘ lower) refl)
-           ; (flip , ⋆) → equiv-by-eq
-           (ap (_∘ lower)
-             (prop-eq (RelIsSet X X-is-set)
-               (transitive-rel X X-is-set ∘
-                 (λ R → flip ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ R) )
-               (transitive-rel X X-is-set)
-               λ R → (λ tr → lift _ (λ x y z xRy yRz →
-                                lower tr z y x yRz xRy))
-                     , λ trᵒᵖ → lift _ λ x y z xRᵒᵖy yRᵒᵖz →
-                                lower trᵒᵖ z y x yRᵒᵖz xRᵒᵖy))
-           }
+       lemma
+       where
+         lemma : (g : ⟨ S₂' ⟩) → (a : ⟨ S₂'∣Rel' ⟩) →
+                 ⟨ transitive-rel X X-is-set (lower a) ⟩ →
+                 ⟨ transitive-rel X X-is-set
+                    (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower a) ⟩
+         lemma g a tr with lower g
+         lemma _ a tr | id∈S₂ = lift _ (lower tr)
+         lemma _ a tr | flip  = lift _ λ x y z xRy yRz →
+                                lower tr z y x yRz xRy
 
    pre-cut : 𝓤₁ ̇
    pre-cut =  𝓟 ℚ × 𝓟 ℚ
