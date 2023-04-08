@@ -671,6 +671,16 @@ module Multiplication
         ptwise-is-prop' pe fe (λ y-R-z →
         rel x z)))))
 
+     irreflexive-rel : 𝓟 {𝓤 = 𝓤₀ ⁺} Rel
+     irreflexive-rel (⟨R⟩ , rel) =
+       Lift (𝓤₀ ⁺)
+         ((x : X) → ¬ (⟨R⟩ (x , x)))
+       , lift-is-prop (
+         ptwise-is-prop' pe fe λ x →
+           -- I want to use ptwise-is-prop' again, but cannot
+           -- for some reason
+           λ prf1 prf2 → nfe-by-fe fe (λ xRx →
+             𝟘-is-prop (prf1 xRx) (prf2 xRx)) )
    open Relations
    module Transitivity (X : 𝓤₀ ̇) (X-is-set : is-set X) where
      -- Let's set things up. First, we need to promote
@@ -701,9 +711,26 @@ module Multiplication
                  ⟨ transitive-rel X X-is-set
                     (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower a) ⟩
          lemma g a tr with lower g
-         lemma _ a tr | id∈S₂ = lift _ (lower tr)
+         lemma _ a tr | id∈S₂ = tr
          lemma _ a tr | flip  = lift _ λ x y z xRy yRz →
                                 lower tr z y x yRz xRy
+
+     irreflexive-is-invariant : invariant
+       S₂' S₂'∣Rel'
+       (Ω (𝓤₀ ⁺)) prop-is-set
+       (irreflexive-rel X X-is-set ∘ lower)
+     irreflexive-is-invariant =
+       invariant-proposition pe fe S₂' S₂'∣Rel'
+       (irreflexive-rel X X-is-set ∘ lower)
+       lemma
+       where
+         lemma : (g : ⟨ S₂' ⟩) → (a : ⟨ S₂'∣Rel' ⟩) →
+                 ⟨ irreflexive-rel X X-is-set (lower a) ⟩ →
+                 ⟨ irreflexive-rel X X-is-set
+                    (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower a) ⟩
+         lemma g a ir with lower g
+         lemma g a ir | id∈S₂ = ir
+         lemma g a ir | flip  = lift _ λ x prf → lower ir x prf
 
    pre-cut : 𝓤₁ ̇
    pre-cut =  𝓟 ℚ × 𝓟 ℚ
