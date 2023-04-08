@@ -21,13 +21,18 @@ open import Notation.General
 
 open import UF.Subsingletons
 open import UF.FunExt
+open import UF.Equiv
 open import UF.Powerset
+open import UF.UniverseEmbedding
 
 open import Rationals.Type
 open import Rationals.Order
 
 open import Groups.Type
 open import Groups.GroupActions
+
+open import MLTT.Id
+
 \end{code}
 
 \section{Symmetric Programming}
@@ -37,7 +42,11 @@ that let us program/prove a larger number of symmetric cases by only
 considering a representative from each orbit. Since this is a new
 style of dependently-typed programming, there is going to be a gap
 between how we'd like to express those constructs, and how we can
-express them in Agda without having to deal with the internals of the type-checker.
+express them in Agda without having to deal with the internals of the
+type-checker.
+
+The code below is work-in-progress mess. Best to skip it all the way
+down to the proof-sketch (starting with the words 'Here's the plan.').
 
 \begin{code}
 module DedekindReals.Symmetry where
@@ -49,6 +58,24 @@ data _≈_ {X : 𝓤 ̇} (x : X) : {Y : 𝓤 ̇} → (y : Y) → 𝓤 ⁺ ̇
     where
     NB:_since_and_ : forall {Y} (y : Y) →
       (prf : X ＝ Y) → transport id prf x ＝ y → x ≈ y
+
+pr₁-eq : forall {X : 𝓤 ̇} {x₁ x₂}
+  {Y : X → 𝓥 ̇} {y₁ : Y x₁} {y₂ : Y x₂} →
+  (x₁ , y₁) ＝ (x₂ , y₂) → x₁ ＝ x₂
+pr₁-eq = ap pr₁
+
+pr₂-eq : forall {X : 𝓤 ̇} {x₁ x₂}
+  {Y : X → 𝓥 ̇} {y₁ : Y x₁} {y₂ : Y x₂} →
+  (x₁ , y₁) ＝ (x₂ , y₂) → y₁ ≈ y₂
+pr₂-eq {Y = Y} {y₁} {.y₁} refl = NB: y₁ since refl and refl
+
+hetero-by-homo : {X : 𝓤 ̇} {x y : X} → x ＝ y → x ≈ y
+hetero-by-homo refl = NB: _ since refl and refl
+
+sigma-eq : forall {X : 𝓤 ̇} {x₁ x₂}
+  {Y : X → 𝓥 ̇} {y₁ : Y x₁} {y₂ : Y x₂} →
+  x₁ ＝ x₂ → y₁ ≈ y₂ → (x₁ , y₁) ＝ (x₂ , y₂)
+sigma-eq refl (NB: _ since refl and refl) = refl
 
 
 module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
@@ -440,7 +467,44 @@ module GenericActions {𝓤 : Universe} where
   invariant G A ⟨B⟩ ⟨B⟩set f =
     is-dep-equivariant G A (const-action G A ⟨B⟩ ⟨B⟩set) f
 
+  invariant' : (G : Group 𝓤) → (A : Action G) →
+    (⟨B⟩ : 𝓤 ̇) → is-set ⟨B⟩ →
+    (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ̇
+  invariant' G A ⟨B⟩ ⟨B⟩set f =
+    (g : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
+    ((f (g ◂⟨ G ∣ A ⟩ a)) ＝ (f a))
+
+  invariant-by-invariant' :
+    (G : Group 𝓤) → (A : Action G) →
+    (⟨B⟩ : 𝓤 ̇) → (⟨B⟩set : is-set ⟨B⟩) →
+    (f : ⟨ A ⟩ → ⟨B⟩) → invariant' G A ⟨B⟩ ⟨B⟩set f →
+    invariant G A ⟨B⟩ ⟨B⟩set f
+  invariant-by-invariant' G A ⟨B⟩ ⟨B⟩set f inv' g a =
+    hetero-by-homo (inv' g a)
 open GenericActions public
+
+-- Must already exist somewhere
+nfe-by-fe : {𝓤 𝓥 : Universe} → funext 𝓤 𝓥 → DN-funext 𝓤 𝓥
+nfe-by-fe fe {f = f} {g = g} x = pr₁ (pr₁ (fe f g)) x
+
+lift-is-prop : {X : 𝓤 ̇} → is-prop X → is-prop (Lift 𝓥 X)
+lift-is-prop {𝓤} {𝓥} {X} X-is-prop lx ly =
+  lx ＝⟨ (η-Lift 𝓥 lx)⁻¹ ⟩
+  lift 𝓥 (lower lx) ＝⟨ ap (lift 𝓥)
+                         (X-is-prop (lower lx) (lower ly)) ⟩
+  lift 𝓥 (lower ly) ＝⟨ η-Lift 𝓥 ly ⟩
+  ly ∎
+
+prop-is-set : {𝓤 : Universe} →
+  is-set (Ω 𝓤)
+prop-is-set {𝓤} {P} {.P} refl refl = refl
+
+prop-is-prop : {𝓤 : Universe} → (X : 𝓤 ̇) → (X-is-set : is-set X) →
+  (fe : funext 𝓤 𝓤) →
+  is-prop (is-prop X)
+prop-is-prop {𝓤} X X-is-set fe prf1 prf2 = nfe-by-fe fe
+  (λ x → nfe-by-fe fe
+  (λ y → X-is-set (prf1 x y) (prf2 x y)))
 
 module Multiplication
          (pe : Prop-Ext)
@@ -454,13 +518,71 @@ module Multiplication
    open import DedekindReals.Type pe pt fe
    open PropositionalTruncation pt
 
+   -- Surely this exists somewhere?
+   ptwise-is-prop : {X : 𝓤 ̇} → (F : X → 𝓤 ̇) →
+     ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
+   ptwise-is-prop F ptwise f g =
+     nfe-by-fe fe (λ x → ptwise x (f x) (g x))
+
+   ptwise-is-prop' : {X : 𝓤 ̇} → {F : X → 𝓤 ̇} →
+     ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
+   ptwise-is-prop' {F = F} = ptwise-is-prop F
+
    _⇒_ : {X : 𝓤 ̇} → (x y : 𝓟 X) →  𝓟 X
-   U ⇒ V = λ x → (⟨ U x ⟩ → ⟨ V x ⟩) , λ a b → nfe (λ u → {!pr₂ V!})
+   _⇒_ {𝓤} {X} U V
+     = λ x → (⟨ U x ⟩ → ⟨ V x ⟩)
+     , ptwise-is-prop (λ _ → ⟨ V x ⟩) λ _ → holds-is-prop (V x)
 
+   prop-eq : {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟 X) →
+     ((x : X) → ⟨ (P ⇒ Q) x ⟩ × ⟨ (Q ⇒ P) x ⟩) → P ＝ Q
+   prop-eq {X = X} X-is-set P Q ptwise = nfe-by-fe fe (λ x → sigma-eq
+     (foo x)
+     (NB: pr₂ (Q x) since (ap is-prop (foo x))
+      and prop-is-prop (pr₁ (Q x))
+          (props-are-sets (pr₂ (Q x)))
+          -- what a mess
+          fe (transport id
+             (transport (λ y → is-prop (pr₁ (P x)) ＝ is-prop y)
+             (pe (pr₂ (P x)) (pr₂ (Q x)) (pr₁ (ptwise x)) (pr₂ (ptwise x)))
+             refl)
+             (pr₂ (P x))) (pr₂ (Q x))))
+     where
+       foo : (x : X) → pr₁ (P x) ＝ pr₁ (Q x)
+       foo x = (pe (pr₂ (P x)) (pr₂ (Q x))
+              (pr₁ (ptwise x)) (pr₂ (ptwise x)))
+   module Lifting (𝓥 : Universe) where
+     Lift-group : Group 𝓤 → Group (𝓤 ⊔ 𝓥)
+     Lift-group G
+       = Lift 𝓥 ⟨ G ⟩
+       , (λ x y → lift 𝓥 (lower x ·⟨ G ⟩ lower y))
+       , (Lift-is-set 𝓥 ⟨ G ⟩ (group-is-set G))
+       , (λ x y z → ap (lift 𝓥)
+           (assoc G (lower x) (lower y) (lower z)))
+       , lift 𝓥 (unit G)
+       , (λ x → ap (lift 𝓥)
+           (unit-left G (lower x)))
+       , (λ x → ap (lift 𝓥)
+           (unit-right G (lower x)))
+       , λ x → (lift 𝓥 (inv G (lower x)))
+       , ap (lift 𝓥) (inv-left G (lower x))
+       , ap (lift 𝓥) (inv-right G (lower x))
 
+     Lift-action : (G : Group 𝓤) → Action G →
+       Action (Lift-group G)
+     Lift-action G A
+       = Lift 𝓥 ⟨ A ⟩
+       , (λ x a → lift 𝓥 ( lower x ◂⟨ G ∣ A ⟩ lower a ))
+       , (Lift-is-set 𝓥 ⟨ A ⟩ (carrier-is-set G A))
+       , (λ g h x → ap (lift 𝓥)
+           (action-assoc G A (lower g) (lower h) (lower x)))
+       , λ x → ap (lift 𝓥)
+           (action-unit G A (lower x))
+
+   open Lifting
    -- Just an example --- I don't have a good feel for how teverything
    -- is set-up with dedekind cuts
-   module Relations (X : 𝓤₀ ̇) (Xset : is-set X) where
+   module Relations {𝓤₀ : Universe}
+                    (X : 𝓤₀ ̇) (Xset : is-set X) where
      PreRel : 𝓤₀ ⁺ ̇
      PreRel = X × X → 𝓤₀ ̇
 
@@ -488,9 +610,7 @@ module Multiplication
      unital-Rel x = refl
 
      RelIsSet : is-set Rel
-     RelIsSet = {!-- should be able to set things up so this is true!}
-     universeIsSet : is-set (𝓤₀ ̇)
-     universeIsSet = {!-- This definitely isn't true, need to rethink the set-up!}
+     RelIsSet {R} {.R} refl refl = refl
 
      S₂onRel : Action-structure S₂ Rel
      S₂onRel = _◂⟨S₂∣Rel⟩_
@@ -501,11 +621,76 @@ module Multiplication
      S₂∣Rel : Action (S₂ {𝓤 = 𝓤₀ ⁺})
      S₂∣Rel = Rel , S₂onRel
 
-
-     transitive-rel : 𝓟 Rel
+     transitive-rel : 𝓟 {𝓤 = 𝓤₀ ⁺} Rel
      transitive-rel (⟨R⟩ , rel) =
-       {!!} --(x y z : X) → ⟨R⟩ (x , y) → ⟨R⟩ (y , z) → ⟨R⟩ (x , z)
+      Lift (𝓤₀ ⁺)
+        ((x y z : X) → ⟨R⟩ (x , y) → ⟨R⟩ (y , z) → ⟨R⟩ (x , z))
+      , lift-is-prop (
+        ptwise-is-prop' λ x →
+        ptwise-is-prop' (λ y →
+        ptwise-is-prop' (λ z →
+        ptwise-is-prop' (λ x-R-y →
+        ptwise-is-prop' (λ y-R-z →
+        rel x z)))))
 
+   open Relations
+   transitive-is-invariant : (X : 𝓤₀ ̇) → (X-is-set : is-set X) →
+     invariant
+       (Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺}))
+       (Lift-action (𝓤₀ ⁺⁺)
+                    (S₂ {𝓤₀ ⁺})
+                    (S₂∣Rel X X-is-set))
+       (Ω (𝓤₀ ⁺)) prop-is-set
+       λ R → transitive-rel X X-is-set
+         (lower R)
+   transitive-is-invariant X X-is-set =
+     invariant-by-invariant'
+       ((Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺})))
+       ((Lift-action (𝓤₀ ⁺⁺)
+                    (S₂ {𝓤₀ ⁺})
+                    (S₂∣Rel X X-is-set)))
+       (Ω (𝓤₀ ⁺))
+       prop-is-set
+       (λ R → transitive-rel X X-is-set
+         (lower R))
+         let u = (Lift-is-set (𝓤₀ ⁺) (Rel X X-is-set) (RelIsSet X X-is-set)) in
+         λ { (id∈S₂ , ⋆) → foo
+           let v = prop-eq
+                   u
+                   (T2 (lift ((𝓤₀ ⁺) ⁺) id∈S₂))
+                   (T1 (lift ((𝓤₀ ⁺) ⁺) id∈S₂))
+                   (λ R → ((λ tr → (pr₁ tr) ,
+                     ⋆) ,
+                     λ tr' → ((pr₁ tr') , ⋆)))
+           in {!v -- *sigh* level mismatch!}
+           ; (flip , ⋆) →
+           let v = prop-eq
+                   u
+                   (T2 (lift ((𝓤₀ ⁺) ⁺) flip))
+                   (T1 (lift ((𝓤₀ ⁺) ⁺) flip))
+                   (λ R → ((λ tr → (λ x y z xRy yRz →
+                               pr₁ tr z y x yRz xRy) ,
+                     ⋆) ,
+                     λ tr' → (((λ x y z xRy yRz →
+                               pr₁ tr' z y x yRz xRy)) , ⋆)))
+           in {!v -- *sigh* level mismatch!} }
+     where
+       foo : forall {𝓥 : Universe} {X : 𝓥 ̇} {A : X → 𝓤 ̇}
+         {f g : (x : X) → A x} → f ＝ g →
+          f ∼ g
+       foo refl x = refl
+
+       T1 T2 : (g : ⟨ Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺}) ⟩) →
+          𝓟 (Lift (𝓤₀ ⁺) (Rel X X-is-set))
+          --(R : Lift (𝓤₀ ⁺⁺) (Rel X X-is-set)) → Ω (𝓤₀ ⁺)
+       T1 g R = transitive-rel X X-is-set (lower R)
+       T2 g R = transitive-rel X X-is-set
+         (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ (lower R))
+       {-
+       foo : T1 (lift ((𝓤₀ ⁺) ⁺) (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower R))  ＝ T2 R
+       foo = ap (λ f → f {!R!})
+         (prop-eq (RelIsSet X X-is-set) {!!} {!!} {!!})
+         -}
 {-
 
      invariant-transitive :
