@@ -902,12 +902,42 @@ module Multiplication
    𝓟∋Sigma Y P x
      = (∃ y ꞉ Y x , ⟨ P (x , y) ⟩)
      , ∃-is-prop
+
+   -- A simply typed variant
+   s𝓟∋Sigma : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (X × Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+   s𝓟∋Sigma Y P x
+     = (∃ y ꞉ Y , ⟨ P (x , y) ⟩)
+     , ∃-is-prop
+
+   -- a closed variant
+   c𝓟∋Sigma : {𝓤 𝓥 : Universe} → (Y : 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (Y) → Ω (𝓤 ⊔ 𝓥)
+   c𝓟∋Sigma Y P
+     = (∃ y ꞉ Y , ⟨ P y ⟩)
+     , ∃-is-prop
+
    𝓟∋Pi : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : X → 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (Sigma X Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
    𝓟∋Pi Y P x
      = ((y : Y x) → ⟨ P (x , y) ⟩)
      -- for some reason I can't use pntwise-is-prop
      , λ f g → nfe-by-fe fe (λ y → holds-is-prop
          (P (x , y)) (f y) (g y))
+
+   -- a simply typed variant
+   s𝓟∋Pi : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (X × Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+   s𝓟∋Pi Y P x
+     = ((y : Y) → ⟨ P (x , y) ⟩)
+     -- for some reason I can't use pntwise-is-prop
+     , λ f g → nfe-by-fe fe (λ y → holds-is-prop
+         (P (x , y)) (f y) (g y))
+
+   c𝓟∋Pi : {𝓤 𝓥 : Universe} → (Y : 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (Y) → Ω (𝓤 ⊔ 𝓥)
+   c𝓟∋Pi Y P
+     = ((y : Y) → ⟨ P y ⟩)
+     -- for some reason I can't use pntwise-is-prop
+     , λ f g → nfe-by-fe fe (λ y → holds-is-prop
+         (P y) (f y) (g y))
+
+
    module Cuts {𝓤 : Universe} {X : 𝓤 ̇} (Xset : is-set X) where
      open Relations pe fe X Xset
      open RelationsRelations pe fe X Xset
@@ -916,16 +946,11 @@ module Multiplication
      pre-cut-wrt _ = 𝓟 X × 𝓟 X
 
      rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
-     rounded-wrt R P = (𝓟∋Pi {𝓥 = 𝓤 ⁺} (λ _ → X)
-           (lift-pred (P ∘ pr₂) ⟺
-             𝓟∋Sigma (λ _ → X)
-               (𝓟contra-map reassoc
-                 (lift-pred (R ∘ pr₂) ∧
-                  lift-pred (P ∘ pr₂ ∘ pr₂))))) ⋆
-       where
-         reassoc : {𝓦 : Universe} {X Y Z : 𝓦 ̇} →
-               ((X × Y) × Z) → (X × (Y × Z))
-         reassoc ((x , y) , z) = x , (y , z)
+     rounded-wrt R P = (c𝓟∋Pi {𝓥 = 𝓤 ⁺} X
+           (lift-pred P ⟺
+             s𝓟∋Sigma X
+               (lift-pred R ∧
+                  lift-pred (P ∘ pr₂ ))))
 
      left-rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
      left-rounded-wrt R = rounded-wrt R
@@ -934,9 +959,201 @@ module Multiplication
      right-rounded-wrt R =
        left-rounded-wrt (opposite R)
 
+     inhabited-pred : 𝓟 (𝓟 X)
+     inhabited-pred P =
+       (𝓟∋Sigma (λ _ → X) (lift-pred (P ∘ pr₂))) ⋆
+
+     inhabited-pred-inhabited : (P : 𝓟 X) →
+       ⟨ inhabited-pred P ⟩ → inhabited P
+     inhabited-pred-inhabited P
+       = ∥∥-induction
+         (λ _ →
+           inhabited-subsets.being-inhabited-is-prop pt P)
+         λ { (p , Pp) → ∣ p , lower Pp ∣}
+
+     inhabited-inhabited-pred : (P : 𝓟 X) →
+       inhabited P → ⟨ inhabited-pred P ⟩
+     inhabited-inhabited-pred P = ∥∥-induction
+       (λ _ → holds-is-prop (inhabited-pred P))
+       λ { (p , Pp) → ∣ p , (lift _ Pp) ∣ }
+
+     semi-cut-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     semi-cut-wrt R = rounded-wrt R ∧ inhabited-pred
+
+   open Cuts {X = ℚ} (ℚ-is-set fe)
+
+   ℚ<  ℚ> : 𝓟 (ℚ × ℚ)
+   ℚ< (p , q)
+     = p < q
+     , ℚ<-is-prop p q
+   ℚ> = Relations.opposite pe fe ℚ (ℚ-is-set fe) ℚ<
+
    pre-cut : 𝓤₁ ̇
    pre-cut =  𝓟 ℚ × 𝓟 ℚ
 
+   left-rounded-wrt-ℚ<-rounded-left :
+     (L : 𝓟 ℚ) →
+       ⟨ left-rounded-wrt ℚ< L ⟩  →
+       rounded-left L
+   left-rounded-wrt-ℚ<-rounded-left L lrounded p
+     = (λ ⟨Lp⟩ →
+       ∥∥-induction
+         (λ _ → ∃-is-prop)
+         (λ { (q , p<q , Lq) → ∣ q , lower p<q , lower Lq ∣})
+       (pr₁ (lrounded p) (lift _ ⟨Lp⟩)))
+     , ∥∥-induction
+         (λ _ → holds-is-prop (L p))
+         λ { (q , p<q , Lq) →
+           lower (pr₂ (lrounded p)
+             ∣ q , lift _ p<q , lift _ Lq ∣) }
+
+   rounded-left-left-rounded-wrt-ℚ< :
+     (L : 𝓟 ℚ) →
+       rounded-left L →
+       ⟨ left-rounded-wrt ℚ< L ⟩
+   rounded-left-left-rounded-wrt-ℚ< L lrounded p
+     = (λ Lp →
+       ∥∥-induction
+         (λ _ → ∃-is-prop)
+         (λ {(q , p<q , Lq) → ∣ q , lift _ p<q , lift _ Lq ∣})
+         (pr₁ (lrounded p) (lower Lp)))
+     , ∥∥-induction
+         (λ _ → lift-is-prop (holds-is-prop (L p)))
+         (λ { (q , p<q , Lq) →
+         lift _ (pr₂ (lrounded p) ∣ q , lower p<q , lower Lq ∣)})
+   -- Boilerplate galore...
+
+   right-rounded-wrt-ℚ<-rounded-right :
+     (R : 𝓟 ℚ) →
+       ⟨ right-rounded-wrt ℚ< R ⟩  →
+       rounded-right R
+   right-rounded-wrt-ℚ<-rounded-right R rrounded p
+     = (λ ⟨Rp⟩ →
+       ∥∥-induction
+         (λ _ → ∃-is-prop)
+         (λ { (q , p>q , Rq) → ∣ q , lower p>q , lower Rq ∣})
+         (pr₁ (rrounded p) (lift _ ⟨Rp⟩)))
+     , ∥∥-induction
+         (λ _ → holds-is-prop (R p))
+         λ { (q , p>q , Rq) →
+           lower (pr₂ (rrounded p)
+             ∣ q , lift _ p>q , lift _ Rq ∣) }
+
+   rounded-right-right-rounded-wrt-ℚ< :
+     (R : 𝓟 ℚ) →
+       rounded-right R →
+       ⟨ right-rounded-wrt ℚ< R ⟩
+   rounded-right-right-rounded-wrt-ℚ< R rrounded p
+     = (λ Rp →
+       ∥∥-induction
+         (λ _ → ∃-is-prop)
+         (λ {(q , p>q , Rq) → ∣ q , lift _ p>q , lift _ Rq ∣})
+         (pr₁ (rrounded p) (lower Rp)))
+     , ∥∥-induction
+         (λ _ → lift-is-prop (holds-is-prop (R p)))
+         (λ { (q , p>q , Rq) →
+         lift _ (pr₂ (rrounded p) ∣ q , lower p>q , lower Rq ∣)})
+
+
+   -- separate out the S₂-symmetric parts of a cut
+   semi-cut : 𝓟 (pre-cut)
+   semi-cut (L , R) =
+     (semi-cut-wrt ℚ< L) ∧Ω (semi-cut-wrt ℚ> R)
+
+   -- TODO: refactor into a lift predicate into an internal
+   -- predicate, and derive equivalence
+
+   disjoint-cut : 𝓟 (pre-cut)
+   disjoint-cut (L , R)
+     = Lift _ (disjoint L R)
+     , lift-is-prop
+       (disjoint-is-prop L R)
+
+   disjoint-cut-disjoint : ((L , R) : pre-cut) →
+     ⟨ disjoint-cut (L , R) ⟩ → disjoint L R
+   disjoint-cut-disjoint (L , R) disj = lower disj
+
+   disjoint-disjoint-cut : ((L , R) : pre-cut) →
+     disjoint L R →
+     ⟨ disjoint-cut (L , R) ⟩
+   disjoint-disjoint-cut (L , R) disj = lift _ disj
+
+   located-cut : 𝓟 (pre-cut)
+   located-cut (L , R)
+     = Lift _ (located L R)
+     , lift-is-prop
+       (located-is-prop L R)
+
+   located-cut-located : ((L , R) : pre-cut) →
+     ⟨ located-cut (L , R) ⟩ → located L R
+   located-cut-located (L , R) loc = lower loc
+
+   located-located-cut : ((L , R) : pre-cut) →
+     located L R →
+     ⟨ located-cut (L , R) ⟩
+   located-located-cut (L , R) loc = lift _ loc
+
+   is-cut : 𝓟 (pre-cut)
+   is-cut = semi-cut ∧ (disjoint-cut ∧ located-cut)
+
+   -- The point: thanks to our use of propositions, we can use a
+   -- Σ-type instead of a truncation
+   ℝ' : 𝓤₁ ̇
+   ℝ' = Σ LR ꞉ pre-cut , ⟨ is-cut LR ⟩
+
+   -- We'll shamelessly cannibalise Andrew's existing development
+   -- As a consequence, we'll see how horrible it is to move
+   -- from an internal language to an external one.
+   -- Most of the horror has already happened when we defined
+   -- each of the components
+   is-cut-isCut : ((L , R) : pre-cut) → ⟨ is-cut (L , R) ⟩ →
+     isCut L R
+   is-cut-isCut LR@(L , R)
+     (((L-rounded , L-inhabited)
+      ,(R-rounded , R-inhabited))
+     , LR-disjoint , LR-located)
+     = inhabited-pred-inhabited L L-inhabited
+     , inhabited-pred-inhabited R R-inhabited
+     , left-rounded-wrt-ℚ<-rounded-left L L-rounded
+     , right-rounded-wrt-ℚ<-rounded-right R R-rounded
+     , disjoint-cut-disjoint (L , R) LR-disjoint
+     , located-cut-located (L , R) LR-located
+
+   isCut-is-cut : ((L , R) : pre-cut) →
+     isCut L R →
+     ⟨ is-cut (L , R) ⟩
+   isCut-is-cut LR@(L , R)
+     ( L-inhabited
+     , R-inhabited
+     , L-rounded
+     , R-rounded
+     , LR-disjoint
+     , LR-located
+     ) = ( ( rounded-left-left-rounded-wrt-ℚ< L L-rounded
+           , inhabited-inhabited-pred L L-inhabited)
+         , ( rounded-right-right-rounded-wrt-ℚ< R R-rounded
+           , inhabited-inhabited-pred R R-inhabited))
+       , disjoint-disjoint-cut LR LR-disjoint
+       , located-located-cut LR LR-located
+
+   -- as a consequences:
+   ℝ≃ℝ' : ℝ ≃ ℝ'
+   ℝ≃ℝ' = (λ {(LR , isCutData) →
+              LR , isCut-is-cut LR isCutData})
+         , ( ℝ'→ℝ
+           , λ x → to-subtype-＝ (holds-is-prop ∘ is-cut)
+                                 refl)
+         , ( ℝ'→ℝ
+           , λ x → to-subtype-＝
+               (λ (L , R) → isCut-is-prop L R)
+               refl
+           )
+     where
+       ℝ'→ℝ : ℝ' → ℝ
+       ℝ'→ℝ (LR , is-cut-data) =
+         LR , is-cut-isCut LR is-cut-data
+
+   -- First, let's define some symmetries on the reals
    \end{code}
 
    Multiplication is defined as in the HoTT Book. It reminds of interval multiplication of rational numbers.

@@ -31,8 +31,8 @@ module DedekindReals.Type
 
 open PropositionalTruncation pt
 
-inhabited : {X : 𝓤₀ ̇} → (L : 𝓟 X) → 𝓤₀ ̇
-inhabited {X} L = ∃ p ꞉ X , p ∈ L
+inhabited : {𝓤₀ : Universe} {X : 𝓤₀ ̇} → (L : 𝓟 X) → 𝓤₀ ̇
+inhabited {X = X} L = ∃ p ꞉ X , p ∈ L
 
 inhabited-left : (L : 𝓟 ℚ) → 𝓤₀ ̇
 inhabited-left = inhabited
