@@ -1153,7 +1153,111 @@ module Multiplication
        ℝ'→ℝ (LR , is-cut-data) =
          LR , is-cut-isCut LR is-cut-data
 
+   open import Rationals.Addition renaming (_+_ to _ℚ+_)
+   open import Rationals.Negation
+   open import Rationals.Multiplication renaming (_*_ to _ℚ*_)
+
    -- First, let's define some symmetries on the reals
+   additive-ℚ : Group 𝓤₀
+   additive-ℚ
+     = ℚ
+     , _ℚ+_
+     , ℚ-is-set fe
+     , ℚ+-assoc fe
+     , 0ℚ
+     , ℚ-zero-left-neutral fe
+     , ℚ-zero-right-neutral fe
+     , λ p → (- p)
+           , (ℚ-inverse-sum-to-zero' fe p)
+           , (ℚ-inverse-sum-to-zero  fe p)
+
+   ℚ∘ : 𝓤₀ ̇
+   ℚ∘ = Σ p ꞉ ℚ , p ≠ 0ℚ
+
+   ℚ∘-is-set : is-set ℚ∘
+   ℚ∘-is-set = sigma-is-set (ℚ-is-set fe)
+     -- TODO: prove this in a way that would make Martin happy
+     (λ {p {f} {.f} refl refl → refl})
+
+   ≠0ℚ-is-prop : (p : ℚ) → is-prop (p ≠ 0ℚ)
+   ≠0ℚ-is-prop p p≠₁0 p≠₂0 = nfe-by-fe fe (λ x → 𝟘-elim (p≠₁0 x))
+
+   -- Must be somewhere!
+   ℚ-dec-eq : (p q : ℚ) → (p ＝ q) ∔ (p ≠ q)
+   ℚ-dec-eq p q with ℚ-trichotomous fe p q
+   ... | inl p<q = inr (λ {refl → ℚ<-not-itself p p<q})
+   ... | inr (inl p＝q) = inl p＝q
+   ... | inr (inr p>q) = inr (λ {refl → ℚ<-not-itself p p>q})
+
+   ℚ*-no-zero-divisors : (p q : ℚ) → (p ℚ* q ＝ 0ℚ) →
+     (p ＝ 0ℚ) ∔ (q ＝ 0ℚ)
+   ℚ*-no-zero-divisors p q p*q=0 with ℚ-dec-eq q 0ℚ
+   ... | inl q=0 = inr q=0
+   ... | inr q≠0 = inl
+     (p
+        ＝⟨ ℚ-mult-right-id fe p  ⁻¹  ⟩
+      p ℚ* 1ℚ
+        ＝⟨ ap (p ℚ*_) (qq'1 ⁻¹) ⟩
+      p ℚ* (q ℚ* q')
+        ＝⟨ ℚ*-assoc fe p q q' ⁻¹ ⟩
+      (p ℚ* q ) ℚ* q'
+        ＝⟨ ap (_ℚ* q') p*q=0 ⟩
+      0ℚ ℚ* q'
+        ＝⟨ ℚ-zero-left-is-zero fe q' ⟩
+      0ℚ ∎)
+     where
+       q-inv : Σ q' ꞉ ℚ , q ℚ* q' ＝ 1ℚ
+       q-inv = ℚ*-inverse fe q q≠0
+       q' : ℚ
+       q' = pr₁ q-inv
+       qq'1 : q ℚ* q' ＝ 1ℚ
+       qq'1 = pr₂ q-inv
+
+   ℚ-one-not-zero : 1ℚ ≠ 0ℚ
+   ℚ-one-not-zero 1=0 = ℚ-zero-not-one fe (1=0 ⁻¹)
+
+   multiplicative-ℚ : Group 𝓤₀
+   multiplicative-ℚ
+     = ℚ∘
+     , (λ (p , p≠0) (q , q≠0) → (p ℚ* q)
+       , cases
+           p≠0
+           q≠0
+           ∘ (ℚ*-no-zero-divisors p q) )
+     , ℚ∘-is-set
+     , (λ (x , _) (y , _) (z , _) →
+          to-subtype-＝
+            ≠0ℚ-is-prop
+            (ℚ*-assoc fe x y z))
+     , (1ℚ , ℚ-one-not-zero)
+     , (λ (x , _) → to-subtype-＝
+         ≠0ℚ-is-prop
+         (ℚ-mult-left-id fe x))
+     , (λ (x , _) → to-subtype-＝
+         ≠0ℚ-is-prop
+         (ℚ-mult-right-id fe x))
+     , λ (x , x≠0) →
+         let x' = multiplicative-inverse fe x x≠0
+         in (x'
+         , λ x'=0 → ℚ-one-not-zero
+           (1ℚ
+              ＝⟨ ℚ*-inverse-product-is-one fe x x≠0 ⁻¹ ⟩
+            x ℚ* x'
+              ＝⟨ ap (x ℚ*_) x'=0 ⟩
+            (x ℚ* 0ℚ)
+              ＝⟨ ℚ-zero-right-is-zero fe x ⟩
+            0ℚ ∎))
+       , to-subtype-＝
+           ≠0ℚ-is-prop
+           (x' ℚ* x
+             ＝⟨ ℚ*-comm x' x ⟩
+           x ℚ* x'
+             ＝⟨ ℚ*-inverse-product-is-one fe x x≠0 ⟩
+            1ℚ ∎)
+       , to-subtype-＝
+           ≠0ℚ-is-prop
+           (ℚ*-inverse-product-is-one fe x x≠0)
+
    \end{code}
 
    Multiplication is defined as in the HoTT Book. It reminds of interval multiplication of rational numbers.
