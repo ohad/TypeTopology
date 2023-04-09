@@ -110,6 +110,22 @@ sigma-is-set : {𝓤 : Universe} → {X : 𝓤 ̇} → {Y : X → 𝓤 ̇} →
 -- short-cut, ought to use dependent ap for this
 sigma-is-set {X} {Y} Xset Yset refl refl = refl
 
+_∧Ω_ : Ω 𝓤 → Ω 𝓤 → Ω 𝓤
+a ∧Ω b = (⟨ a ⟩ × ⟨ b ⟩)
+       , (×-is-prop (holds-is-prop a) (holds-is-prop b))
+
+_∧_ : {𝓤 𝓥 : Universe} {X : 𝓤 ̇} → 𝓟' X → 𝓟' X → 𝓟' {𝓤} {𝓥} X
+P ∧ Q = λ x → P x ∧Ω Q x
+
+𝓟contra-map : {𝓤 𝓥 : Universe } {X Y : 𝓤 ̇} →
+  (Y → X) → 𝓟' {𝓥 = 𝓥} X → 𝓟' {𝓤} {𝓥} Y
+𝓟contra-map f P = P ∘ f
+
+lift-pred : {𝓤 𝓥 𝓥' : Universe} {X : 𝓤 ̇} →
+  𝓟' {𝓤} {𝓥} X → 𝓟' {𝓤} {𝓥 ⊔ 𝓥'} X
+lift-pred {𝓥' = 𝓥'} P x = (Lift 𝓥' ⟨ P x ⟩)
+              , (lift-is-prop (holds-is-prop (P x)))
+
 module SurelyThisExistsSomewhere
   (pe : Prop-Ext)
   (fe : Fun-Ext)
@@ -126,6 +142,11 @@ module SurelyThisExistsSomewhere
   _⇒_ {𝓤} {X} U V
      = λ x → (⟨ U x ⟩ → ⟨ V x ⟩)
      , ptwise-is-prop (λ _ → ⟨ V x ⟩) λ _ → holds-is-prop (V x)
+
+  _⟺_ : {𝓤 𝓥 : Universe}
+     {X : 𝓤 ̇} → (x y : 𝓟' {𝓤} {𝓥} X) →  𝓟' {𝓤} {𝓥} X
+  P ⟺ Q = (P ⇒ Q) ∧ (Q ⇒ P)
+
   prop-eq : {𝓤 𝓥 : Universe}
      {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟' {𝓤} {𝓥} X) →
      ((x : X) → ⟨ (P ⇒ Q) x ⟩ × ⟨ (Q ⇒ P) x ⟩) → P ＝ Q
@@ -144,14 +165,7 @@ module SurelyThisExistsSomewhere
        foo : (x : X) → pr₁ (P x) ＝ pr₁ (Q x)
        foo x = (pe (pr₂ (P x)) (pr₂ (Q x))
               (pr₁ (ptwise x)) (pr₂ (ptwise x)))
-open SurelyThisExistsSomewhere
-
-_∧Ω_ : Ω 𝓤 → Ω 𝓤 → Ω 𝓤
-a ∧Ω b = (⟨ a ⟩ × ⟨ b ⟩)
-       , (×-is-prop (holds-is-prop a) (holds-is-prop b))
-
-_∧_ : {X : 𝓤 ̇} → 𝓟 X → 𝓟 X → 𝓟 X
-P ∧ Q = λ x → P x ∧Ω Q x
+open SurelyThisExistsSomewhere public hiding (_⟺_)
 
 
 module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
@@ -204,7 +218,7 @@ module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
     g ◂⟨ G ∣ A ⟩ ((inv G g) ◂⟨ G ∣ A ⟩ a) ＝ a
   inv-act-inverse-right g a = {!!} -- fun to be had here
 
-open SymmetricProgramming public
+open SymmetricProgramming
 
 transport2 : {X Y : 𝓤 ̇ } (A : X → Y → 𝓥 ̇ ) {x1 x2 : X} {y1 y2 : Y}
           → x1 ＝ x2 → y1 ＝ y2 → A x1 y1 → A x2 y2
@@ -705,12 +719,11 @@ module CommonAssumptions
      pointwise-prop R = (x y : X) → is-prop (R (x , y))
 
      Rel : 𝓤₀ ⁺ ̇
-     Rel = Σ pointwise-prop
+     Rel = 𝓟 (X × X)
 
      opposite : Rel → Rel
-     opposite (⟨R⟩ , props) =
-       (λ xy → ⟨R⟩ (flip ◂⟨ S₂ ∣ Flip X Xset  ⟩ xy))
-       , λ x y x=₁y x=₂y → props y x x=₁y x=₂y
+     opposite R xy =
+       R (flip ◂⟨ S₂ ∣ Flip X Xset  ⟩ xy)
 
      _◂⟨S₂∣Rel⟩_ : action-structure S₂ Rel
      id∈S₂ ◂⟨S₂∣Rel⟩ R = R
@@ -736,27 +749,27 @@ module CommonAssumptions
      S₂∣Rel : Action (S₂ {𝓤 = 𝓤₀ ⁺})
      S₂∣Rel = Rel , S₂onRel
 
-
   module RelationsRelations {𝓤₀ : Universe}
                     (X : 𝓤₀ ̇) (Xset : is-set X) where
      open Relations X Xset
 
      transitive-rel : 𝓟 {𝓤 = 𝓤₀ ⁺} Rel
-     transitive-rel (⟨R⟩ , rel) =
+     transitive-rel R =
       Lift (𝓤₀ ⁺)
-        ((x y z : X) → ⟨R⟩ (x , y) → ⟨R⟩ (y , z) → ⟨R⟩ (x , z))
+        ((x y z : X) → ⟨ R (x , y) ⟩ → ⟨ R (y , z) ⟩ →
+          ⟨ R (x , z) ⟩)
       , lift-is-prop (
         ptwise-is-prop' pe fe λ x →
         ptwise-is-prop' pe fe (λ y →
         ptwise-is-prop' pe fe (λ z →
         ptwise-is-prop' pe fe (λ x-R-y →
         ptwise-is-prop' pe fe (λ y-R-z →
-        rel x z)))))
+        holds-is-prop (R (x , z)))))))
 
      irreflexive-rel : 𝓟 {𝓤 = 𝓤₀ ⁺} Rel
-     irreflexive-rel (⟨R⟩ , rel) =
+     irreflexive-rel R =
        Lift (𝓤₀ ⁺)
-         ((x : X) → ¬ (⟨R⟩ (x , x)))
+         ((x : X) → ¬ (⟨ R (x , x) ⟩))
        , lift-is-prop (
          ptwise-is-prop' pe fe λ x →
            -- I want to use ptwise-is-prop' again, but cannot
@@ -767,15 +780,15 @@ module CommonAssumptions
      trichotomous-rel : (R : Rel) →
        ⟨ irreflexive-rel R ⟩ →
        ⟨ transitive-rel  R ⟩ → Ω (𝓤₀ ⁺)
-     trichotomous-rel (⟨R⟩ , rel) ir tr =
+     trichotomous-rel R ir tr =
        Lift (𝓤₀ ⁺)
-         ((x y : X) → (⟨R⟩ (x , y)) ∔ (x ＝ y) ∔ (⟨R⟩ (y , x)))
+         ((x y : X) → (⟨ R (x , y) ⟩) ∔ (x ＝ y) ∔ (⟨ R (y , x)⟩))
        , lift-is-prop (
          ptwise-is-prop' pe fe λ x →
          ptwise-is-prop' pe fe λ y →
-         +-is-prop (rel x y) (
+         +-is-prop (holds-is-prop (R (x , y))) (
          +-is-prop Xset
-                   (rel y x)
+                   (holds-is-prop (R (y , x)))
            -- discharge disjointness assumptions
            (λ {refl → lower ir x}))
            λ { xRy (inl refl) → lower ir x xRy
@@ -783,7 +796,10 @@ module CommonAssumptions
                                (lower tr x y x
                                 xRy yRx)}
            )
-  module Transitivity (X : 𝓤₀ ̇) (X-is-set : is-set X) where
+
+
+  module Transitivity {𝓤₀ : Universe}
+                      (X : 𝓤₀ ̇) (X-is-set : is-set X) where
      -- Let's set things up. First, we need to promote
      -- the group and action to the same level:
      open Relations X X-is-set
@@ -868,10 +884,7 @@ module CommonAssumptions
              (λ yRx → inl yRx)
              (cases (λ y＝x → inr (inl ((y＝x)⁻¹)))
                     λ xRy → inr (inr xRy))
-
-pre-cut : 𝓤₁ ̇
-pre-cut =  𝓟 ℚ × 𝓟 ℚ
-
+open CommonAssumptions
 
 module Multiplication
          (pe : Prop-Ext)
@@ -883,6 +896,46 @@ module Multiplication
    open import Rationals.MinMax fe
    open import DedekindReals.Type pe pt fe
    open PropositionalTruncation pt
+   open SurelyThisExistsSomewhere pe fe using (_⟺_)
+
+   𝓟∋Sigma : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : X → 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (Sigma X Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+   𝓟∋Sigma Y P x
+     = (∃ y ꞉ Y x , ⟨ P (x , y) ⟩)
+     , ∃-is-prop
+   𝓟∋Pi : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : X → 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (Sigma X Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+   𝓟∋Pi Y P x
+     = ((y : Y x) → ⟨ P (x , y) ⟩)
+     -- for some reason I can't use pntwise-is-prop
+     , λ f g → nfe-by-fe fe (λ y → holds-is-prop
+         (P (x , y)) (f y) (g y))
+   module Cuts {𝓤 : Universe} {X : 𝓤 ̇} (Xset : is-set X) where
+     open Relations pe fe X Xset
+     open RelationsRelations pe fe X Xset
+     open Transitivity pe fe {𝓤₀ = 𝓤} X Xset
+     pre-cut-wrt : (_<_ : Rel) → 𝓤 ⁺ ̇
+     pre-cut-wrt _ = 𝓟 X × 𝓟 X
+
+     rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     rounded-wrt R P = (𝓟∋Pi {𝓥 = 𝓤 ⁺} (λ _ → X)
+           (lift-pred (P ∘ pr₂) ⟺
+             𝓟∋Sigma (λ _ → X)
+               (𝓟contra-map reassoc
+                 (lift-pred (R ∘ pr₂) ∧
+                  lift-pred (P ∘ pr₂ ∘ pr₂))))) ⋆
+       where
+         reassoc : {𝓦 : Universe} {X Y Z : 𝓦 ̇} →
+               ((X × Y) × Z) → (X × (Y × Z))
+         reassoc ((x , y) , z) = x , (y , z)
+
+     left-rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     left-rounded-wrt R = rounded-wrt R
+
+     right-rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     right-rounded-wrt R =
+       left-rounded-wrt (opposite R)
+
+   pre-cut : 𝓤₁ ̇
+   pre-cut =  𝓟 ℚ × 𝓟 ℚ
 
    \end{code}
 

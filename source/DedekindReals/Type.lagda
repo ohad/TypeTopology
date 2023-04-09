@@ -31,11 +31,14 @@ module DedekindReals.Type
 
 open PropositionalTruncation pt
 
+inhabited : {X : 𝓤₀ ̇} → (L : 𝓟 X) → 𝓤₀ ̇
+inhabited {X} L = ∃ p ꞉ X , p ∈ L
+
 inhabited-left : (L : 𝓟 ℚ) → 𝓤₀ ̇
-inhabited-left L = (∃ p ꞉ ℚ , p ∈ L)
+inhabited-left = inhabited
 
 inhabited-right : (R : 𝓟 ℚ) → 𝓤₀ ̇
-inhabited-right R = (∃ q ꞉ ℚ , q ∈ R)
+inhabited-right = inhabited
 
 rounded-left : (L : 𝓟 ℚ) → 𝓤₀ ̇
 rounded-left L = (x : ℚ) → (x ∈ L ⇔ (∃ p ꞉ ℚ , (x < p) × p ∈ L))
