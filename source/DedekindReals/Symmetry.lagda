@@ -105,6 +105,11 @@ prop-is-prop {𝓤} X X-is-set fe prf1 prf2 = nfe-by-fe fe
   (λ x → nfe-by-fe fe
   (λ y → X-is-set (prf1 x y) (prf2 x y)))
 
+sigma-is-set : {𝓤 : Universe} → {X : 𝓤 ̇} → {Y : X → 𝓤 ̇} →
+  is-set X → ((x : X) → is-set (Y x)) → is-set (Sigma X Y)
+-- short-cut, ought to use dependent ap for this
+sigma-is-set {X} {Y} Xset Yset refl refl = refl
+
 module SurelyThisExistsSomewhere
   (pe : Prop-Ext)
   (fe : Fun-Ext)
@@ -140,6 +145,13 @@ module SurelyThisExistsSomewhere
        foo x = (pe (pr₂ (P x)) (pr₂ (Q x))
               (pr₁ (ptwise x)) (pr₂ (ptwise x)))
 open SurelyThisExistsSomewhere
+
+_∧Ω_ : Ω 𝓤 → Ω 𝓤 → Ω 𝓤
+a ∧Ω b = (⟨ a ⟩ × ⟨ b ⟩)
+       , (×-is-prop (holds-is-prop a) (holds-is-prop b))
+
+_∧_ : {X : 𝓤 ̇} → 𝓟 X → 𝓟 X → 𝓟 X
+P ∧ Q = λ x → P x ∧Ω Q x
 
 
 module SymmetricProgramming (G : Group 𝓤) (A : Action G) where
@@ -545,16 +557,32 @@ module GenericActions {𝓤 : Universe} where
     invariant G A ⟨B⟩ ⟨B⟩set f
   invariant-by-invariant' G A ⟨B⟩ ⟨B⟩set f inv' g a =
     hetero-by-homo (inv' g a)
+
+  invariant'-by-invariant :
+    (G : Group 𝓤) → (A : Action G) →
+    (⟨B⟩ : 𝓤 ̇) → (⟨B⟩set : is-set ⟨B⟩) →
+    (f : ⟨ A ⟩ → ⟨B⟩) → invariant G A ⟨B⟩ ⟨B⟩set f →
+    invariant' G A ⟨B⟩ ⟨B⟩set f
+  invariant'-by-invariant G A ⟨B⟩ ⟨B⟩set f invar g a
+    with invar g a
+  ... | NB: .(f a) since refl and prf = prf
 open GenericActions public
 
 -- For propositions, we can get therefore get invariance more easily
+prop-is-invariant :
+    {𝓤 : Universe} →
+    (G : Group (𝓤 ⁺)) → (A : Action G) →
+    (P : ⟨ A ⟩ → Ω 𝓤) → 𝓤 ⁺ ̇
+prop-is-invariant G A P =
+  ((g : ⟨ G ⟩) → (a : ⟨ A ⟩) → ⟨ P a ⟩ → ⟨ P (g ◂⟨ G ∣ A ⟩ a) ⟩)
+
 invariant-proposition :
     (pe : Prop-Ext) (fe : Fun-Ext)
     {𝓤 : Universe} →
     (G : Group (𝓤 ⁺)) → (A : Action G) →
-    (f : ⟨ A ⟩ → Ω 𝓤) →
-    ((g : ⟨ G ⟩) → (a : ⟨ A ⟩) → ⟨ f a ⟩ → ⟨ f (g ◂⟨ G ∣ A ⟩ a) ⟩) →
-    invariant {𝓤 ⁺} G A (Ω 𝓤) prop-is-set f
+    (P : ⟨ A ⟩ → Ω 𝓤) →
+    prop-is-invariant G A P →
+    invariant {𝓤 ⁺} G A (Ω 𝓤) prop-is-set P
 invariant-proposition pe fe {𝓤} G A P prf =
   invariant-by-invariant'
     G A (Ω 𝓤) prop-is-set P λ g →
@@ -575,51 +603,100 @@ invariant-proposition pe fe {𝓤} G A P prf =
       ,
       λ ⟨Pa⟩ → prf g a ⟨Pa⟩)
 
-module Multiplication
+invariant-proposition-prop-is-invariant :
+    {𝓤 : Universe} →
+    (G : Group (𝓤 ⁺)) → (A : Action G) →
+    (P : ⟨ A ⟩ → Ω 𝓤) →
+    invariant {𝓤 ⁺} G A (Ω 𝓤) prop-is-set P →
+    prop-is-invariant G A P
+invariant-proposition-prop-is-invariant G A P invar g a ⟨Pa⟩
+  = transport ⟨_⟩
+    ((invariant'-by-invariant G A (Ω _) prop-is-set
+      P invar g a)⁻¹)
+    ⟨Pa⟩
+
+module Lifting {𝓥 : Universe}
+                (pe : Prop-Ext)
+                (fe : Fun-Ext)
+        where
+  Lift-group : Group 𝓤 → Group (𝓤 ⊔ 𝓥)
+  Lift-group G
+     = Lift 𝓥 ⟨ G ⟩
+     , (λ x y → lift 𝓥 (lower x ·⟨ G ⟩ lower y))
+     , (Lift-is-set 𝓥 ⟨ G ⟩ (group-is-set G))
+     , (λ x y z → ap (lift 𝓥)
+         (assoc G (lower x) (lower y) (lower z)))
+     , lift 𝓥 (unit G)
+     , (λ x → ap (lift 𝓥)
+         (unit-left G (lower x)))
+     , (λ x → ap (lift 𝓥)
+         (unit-right G (lower x)))
+     , λ x → (lift 𝓥 (inv G (lower x)))
+     , ap (lift 𝓥) (inv-left G (lower x))
+     , ap (lift 𝓥) (inv-right G (lower x))
+  Lift-action : (G : Group 𝓤) → Action G →
+     Action (Lift-group G)
+  Lift-action G A
+     = Lift 𝓥 ⟨ A ⟩
+     , (λ x a → lift 𝓥 ( lower x ◂⟨ G ∣ A ⟩ lower a ))
+     , (Lift-is-set 𝓥 ⟨ A ⟩ (carrier-is-set G A))
+     , (λ g h x → ap (lift 𝓥)
+         (action-assoc G A (lower g) (lower h) (lower x)))
+     , λ x → ap (lift 𝓥)
+         (action-unit G A (lower x))
+open Lifting
+
+
+module CommonAssumptions
          (pe : Prop-Ext)
-         (pt : propositional-truncations-exist)
          (fe : Fun-Ext)
-         (nfe : ∀ {𝓤 𝓥} → DN-funext 𝓤 𝓥)
        where
 
-   open import Rationals.Multiplication renaming (_*_ to _ℚ*_)
-   open import Rationals.MinMax fe
-   open import DedekindReals.Type pe pt fe
-   open PropositionalTruncation pt
+
+  -- A special case is invariant propositions
+  module Subaction (G : Group 𝓤) (A : Action G) where
+    G' : Group (𝓤 ⁺)
+    G' = Lift-group pe fe G
+
+    A' : Action G'
+    A' = Lift-action pe fe G A
+
+    subaction : (P : 𝓟' ⟨ A ⟩) →
+      prop-is-invariant G' A' (P ∘ lower)  →
+      Action G
+    subaction P invar
+      = (Sigma ⟨ A ⟩ λ a → P a holds)
+      , (λ {g (a , Pa) → (g ◂⟨ G ∣ A ⟩ a)
+                       , invar (lift _ g) (lift _ a) Pa})
+      , sigma-is-set (carrier-is-set G A)
+                     (λ a → props-are-sets (holds-is-prop (P a))  )
+      , (λ {g h (a , Pa) → to-subtype-＝ (holds-is-prop ∘ P)
+             ((g ·⟨ G ⟩ h) ◂⟨ G ∣ A ⟩ a
+                 ＝⟨ action-assoc G A g h a ⟩
+              g ◂⟨ G ∣ A ⟩ (h ◂⟨ G ∣ A ⟩ a) ∎)
+           })
+      -- similarly
+      , λ x →
+        to-subtype-＝ (holds-is-prop ∘ P)
+          (action-unit G A (pr₁ x))
+    ∧-invariant : (P Q : 𝓟' ⟨ A ⟩) →
+      prop-is-invariant G' A'
+        (P ∘ lower) →
+      prop-is-invariant G' A'
+        (Q ∘ lower) →
+      prop-is-invariant G' A'
+        (P ∧ Q ∘ lower)
+    ∧-invariant P Q pInv qInv g a (⟨Pa⟩ , ⟨Qa⟩)
+      = pInv g a ⟨Pa⟩ , qInv g a ⟨Qa⟩
+
+  open Subaction
+
+
 
    -- Surely this exists somewhere?
-   module Lifting (𝓥 : Universe) where
-     Lift-group : Group 𝓤 → Group (𝓤 ⊔ 𝓥)
-     Lift-group G
-       = Lift 𝓥 ⟨ G ⟩
-       , (λ x y → lift 𝓥 (lower x ·⟨ G ⟩ lower y))
-       , (Lift-is-set 𝓥 ⟨ G ⟩ (group-is-set G))
-       , (λ x y z → ap (lift 𝓥)
-           (assoc G (lower x) (lower y) (lower z)))
-       , lift 𝓥 (unit G)
-       , (λ x → ap (lift 𝓥)
-           (unit-left G (lower x)))
-       , (λ x → ap (lift 𝓥)
-           (unit-right G (lower x)))
-       , λ x → (lift 𝓥 (inv G (lower x)))
-       , ap (lift 𝓥) (inv-left G (lower x))
-       , ap (lift 𝓥) (inv-right G (lower x))
-
-     Lift-action : (G : Group 𝓤) → Action G →
-       Action (Lift-group G)
-     Lift-action G A
-       = Lift 𝓥 ⟨ A ⟩
-       , (λ x a → lift 𝓥 ( lower x ◂⟨ G ∣ A ⟩ lower a ))
-       , (Lift-is-set 𝓥 ⟨ A ⟩ (carrier-is-set G A))
-       , (λ g h x → ap (lift 𝓥)
-           (action-assoc G A (lower g) (lower h) (lower x)))
-       , λ x → ap (lift 𝓥)
-           (action-unit G A (lower x))
-
-   open Lifting
    -- Just an example --- I don't have a good feel for how teverything
    -- is set-up with dedekind cuts
-   module Relations {𝓤₀ : Universe}
+  module Relations {𝓤₀ : Universe}
                     (X : 𝓤₀ ̇) (Xset : is-set X) where
      PreRel : 𝓤₀ ⁺ ̇
      PreRel = X × X → 𝓤₀ ̇
@@ -659,6 +736,11 @@ module Multiplication
      S₂∣Rel : Action (S₂ {𝓤 = 𝓤₀ ⁺})
      S₂∣Rel = Rel , S₂onRel
 
+
+  module RelationsRelations {𝓤₀ : Universe}
+                    (X : 𝓤₀ ̇) (Xset : is-set X) where
+     open Relations X Xset
+
      transitive-rel : 𝓟 {𝓤 = 𝓤₀ ⁺} Rel
      transitive-rel (⟨R⟩ , rel) =
       Lift (𝓤₀ ⁺)
@@ -681,35 +763,54 @@ module Multiplication
            -- for some reason
            λ prf1 prf2 → nfe-by-fe fe (λ xRx →
              𝟘-is-prop (prf1 xRx) (prf2 xRx)) )
-   open Relations
-   module Transitivity (X : 𝓤₀ ̇) (X-is-set : is-set X) where
+
+     trichotomous-rel : (R : Rel) →
+       ⟨ irreflexive-rel R ⟩ →
+       ⟨ transitive-rel  R ⟩ → Ω (𝓤₀ ⁺)
+     trichotomous-rel (⟨R⟩ , rel) ir tr =
+       Lift (𝓤₀ ⁺)
+         ((x y : X) → (⟨R⟩ (x , y)) ∔ (x ＝ y) ∔ (⟨R⟩ (y , x)))
+       , lift-is-prop (
+         ptwise-is-prop' pe fe λ x →
+         ptwise-is-prop' pe fe λ y →
+         +-is-prop (rel x y) (
+         +-is-prop Xset
+                   (rel y x)
+           -- discharge disjointness assumptions
+           (λ {refl → lower ir x}))
+           λ { xRy (inl refl) → lower ir x xRy
+             ; xRy (inr yRx ) → lower ir x
+                               (lower tr x y x
+                                xRy yRx)}
+           )
+  module Transitivity (X : 𝓤₀ ̇) (X-is-set : is-set X) where
      -- Let's set things up. First, we need to promote
      -- the group and action to the same level:
+     open Relations X X-is-set
+     open RelationsRelations X X-is-set
 
      S₂' : Group (𝓤₀ ⁺⁺)
-     S₂' = Lift-group (𝓤₀ ⁺⁺) (S₂ {𝓤₀ ⁺})
+     S₂' = Lift-group pe fe (S₂ {𝓤₀ ⁺})
 
      S₂'∣Rel' : Action S₂'
-     S₂'∣Rel' = Lift-action (𝓤₀ ⁺⁺) S₂ (S₂∣Rel X X-is-set)
+     S₂'∣Rel' = Lift-action pe fe S₂ S₂∣Rel
 
      Rel'IsSet : is-set ⟨ S₂'∣Rel' ⟩
-     Rel'IsSet = Lift-is-set (𝓤₀ ⁺⁺)
-                 (Rel X X-is-set)
-                 (RelIsSet X X-is-set)
+     Rel'IsSet = Lift-is-set (𝓤₀ ⁺⁺) Rel RelIsSet
 
      transitive-is-invariant : invariant
        S₂' S₂'∣Rel'
        (Ω (𝓤₀ ⁺)) prop-is-set
-       (transitive-rel X X-is-set ∘ lower)
+       (transitive-rel ∘ lower)
      transitive-is-invariant =
        invariant-proposition pe fe S₂' S₂'∣Rel'
-       (transitive-rel X X-is-set ∘ lower)
+       (transitive-rel ∘ lower)
        lemma
        where
          lemma : (g : ⟨ S₂' ⟩) → (a : ⟨ S₂'∣Rel' ⟩) →
-                 ⟨ transitive-rel X X-is-set (lower a) ⟩ →
-                 ⟨ transitive-rel X X-is-set
-                    (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower a) ⟩
+                 ⟨ transitive-rel (lower a) ⟩ →
+                 ⟨ transitive-rel
+                    (lower g ◂⟨ S₂ ∣ S₂∣Rel ⟩ lower a) ⟩
          lemma g a tr with lower g
          lemma _ a tr | id∈S₂ = tr
          lemma _ a tr | flip  = lift _ λ x y z xRy yRz →
@@ -718,24 +819,70 @@ module Multiplication
      irreflexive-is-invariant : invariant
        S₂' S₂'∣Rel'
        (Ω (𝓤₀ ⁺)) prop-is-set
-       (irreflexive-rel X X-is-set ∘ lower)
+       (irreflexive-rel ∘ lower)
      irreflexive-is-invariant =
        invariant-proposition pe fe S₂' S₂'∣Rel'
-       (irreflexive-rel X X-is-set ∘ lower)
+       (irreflexive-rel ∘ lower)
        lemma
        where
-         lemma : (g : ⟨ S₂' ⟩) → (a : ⟨ S₂'∣Rel' ⟩) →
-                 ⟨ irreflexive-rel X X-is-set (lower a) ⟩ →
-                 ⟨ irreflexive-rel X X-is-set
-                    (lower g ◂⟨ S₂ ∣ S₂∣Rel X X-is-set ⟩ lower a) ⟩
+         lemma : (g : ⟨ S₂' ⟩) → (R : ⟨ S₂'∣Rel' ⟩) →
+                 ⟨ irreflexive-rel (lower R) ⟩ →
+                 ⟨ irreflexive-rel
+                    (lower g ◂⟨ S₂ ∣ S₂∣Rel ⟩ lower R) ⟩
          lemma g a ir with lower g
          lemma g a ir | id∈S₂ = ir
          lemma g a ir | flip  = lift _ λ x prf → lower ir x prf
+     S₂∣Quasi-Ordering : Action (S₂ {𝓤₀ ⁺})
+     S₂∣Quasi-Ordering = subaction
+       (S₂ {𝓤₀ ⁺})
+       S₂∣Rel
+       (irreflexive-rel ∧ transitive-rel)
+       (∧-invariant S₂ S₂∣Rel irreflexive-rel transitive-rel
+         (invariant-proposition-prop-is-invariant
+           S₂' S₂'∣Rel' (irreflexive-rel ∘ lower)
+           irreflexive-is-invariant)
+         (invariant-proposition-prop-is-invariant
+           S₂' S₂'∣Rel' (transitive-rel ∘ lower)
+           transitive-is-invariant))
 
-   pre-cut : 𝓤₁ ̇
-   pre-cut =  𝓟 ℚ × 𝓟 ℚ
+     S₂'∣Quasi-Ordering' : Action S₂'
+     S₂'∣Quasi-Ordering' = Lift-action
+       pe fe S₂ S₂∣Quasi-Ordering
+
+     trichotomous-is-invariant : invariant
+       S₂' S₂'∣Quasi-Ordering'
+       (Ω (𝓤₀ ⁺)) prop-is-set
+       ((λ { (R , ir , tr) → trichotomous-rel R ir tr}) ∘ lower)
+     trichotomous-is-invariant = invariant-proposition pe fe
+       S₂' S₂'∣Quasi-Ordering'
+       ((λ { (R , ir , tr) → trichotomous-rel R ir tr}) ∘ lower)
+       lemma
+       where
+         lemma : prop-is-invariant S₂' S₂'∣Quasi-Ordering'
+           ((λ { (R , ir , tr) → trichotomous-rel R ir tr })
+            ∘ lower)
+         lemma g R prf with lower g
+         ... | id∈S₂ = prf
+         ... | flip = lift _ λ x y →
+           Cases (lower prf y x)
+             (λ yRx → inl yRx)
+             (cases (λ y＝x → inr (inl ((y＝x)⁻¹)))
+                    λ xRy → inr (inr xRy))
+
+pre-cut : 𝓤₁ ̇
+pre-cut =  𝓟 ℚ × 𝓟 ℚ
 
 
+module Multiplication
+         (pe : Prop-Ext)
+         (pt : propositional-truncations-exist)
+         (fe : Fun-Ext)
+       where
+
+   open import Rationals.Multiplication renaming (_*_ to _ℚ*_)
+   open import Rationals.MinMax fe
+   open import DedekindReals.Type pe pt fe
+   open PropositionalTruncation pt
 
    \end{code}
 
