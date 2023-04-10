@@ -80,7 +80,7 @@ module DedekindReals.Symmetry.Subactions
       prop-is-invariant G' A'
         (Q ∘ lower) →
       prop-is-invariant G' A'
-        (P ∧ Q ∘ lower)
+        (P ∘ lower ∧ Q ∘ lower)
     ∧-invariant P Q pInv qInv g a (⟨Pa⟩ , ⟨Qa⟩)
       = pInv g a ⟨Pa⟩ , qInv g a ⟨Qa⟩
 

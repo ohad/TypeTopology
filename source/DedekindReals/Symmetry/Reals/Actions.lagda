@@ -39,7 +39,6 @@ open import DedekindReals.Symmetry.UF
 open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 open import DedekindReals.Symmetry.Equivariance
-open import DedekindReals.Symmetry.Transport
 open import DedekindReals.Symmetry.S2
 
 module DedekindReals.Symmetry.Reals.Actions
@@ -56,6 +55,8 @@ module DedekindReals.Symmetry.Reals.Actions
 
    open import DedekindReals.Symmetry.Cuts pe pt fe ℚ (ℚ-is-set fe)
    open import DedekindReals.Symmetry.Reals.Type pe pt fe {𝓤}
+   open import DedekindReals.Symmetry.Transport pe fe
+
 
    open import Rationals.Addition renaming (_+_ to _ℚ+_)
    open import Rationals.Negation
@@ -165,26 +166,31 @@ module DedekindReals.Symmetry.Reals.Actions
    ℚ∘-pos : 𝓟 ℚ∘
    ℚ∘-pos (p , _) = 0ℚ < p , ℚ<-is-prop 0ℚ p
 
-   -- TODO: replace univalence with weaker assumptions
-   -- needed because Groups.Subgroups uses it instead
-   -- of weaker assumptions
-   ua : Univalence
-   ua = {!remove me --might be jamming everything!}
+   instance
+     canonical-map-ℚ∘-to-ℚ : Canonical-Map ℚ∘ ℚ
+     ι {{canonical-map-ℚ∘-to-ℚ}} = pr₁
+
+
+   open import DedekindReals.Symmetry.Subgroups pe pt fe
+
+   -- This ought to be in Rationals.Order
+   ℚ-pos-non-zero : (p : ℚ) → (p>0 : 0ℚ < p) → ¬ (p ＝ 0ℚ)
+   ℚ-pos-non-zero p p>0 p=0 = ℚ<-not-itself 0ℚ (transport (0ℚ <_) p=0 p>0)
 
    multiplicative-ℚ+-subgroup
-     : Subgroups 𝓤₀ ua multiplicative-ℚ
+     : Subgroups' multiplicative-ℚ
    multiplicative-ℚ+-subgroup = ℚ∘-pos ,
-     ( (0 , refl)
-     , (λ (p , p≠0) (q , q≠0) p>0 q>0 →
-         ℚ<-pos-multiplication-preserves-order
-           p q p>0 q>0)
-     , λ (p , p≠0) p>0 →
-         multiplicative-inverse-preserves-pos
-           fe p p>0 p≠0)
+     ( lift _ (0 , refl)
+     , (λ p q p>0 q>0 →
+         (ℚ<-pos-multiplication-preserves-order
+           (ι (lower p)) (ι (lower q)) p>0 q>0))
+     , (λ { (p , p≠0) p>0 →
+            (multiplicative-inverse-preserves-pos fe
+              p (p>0) p≠0)
+          }) ∘ lower)
 
    multiplicative-ℚ+ : Group 𝓤₀
-   multiplicative-ℚ+ = induced-group 𝓤₀ ua
-     multiplicative-ℚ multiplicative-ℚ+-subgroup
+   multiplicative-ℚ+ = induced-group' multiplicative-ℚ multiplicative-ℚ+-subgroup
 
    open import DedekindReals.Addition pe pt fe
      renaming (_+_ to _ℝ+_; -_ to ℝ-_)
@@ -204,7 +210,7 @@ module DedekindReals.Symmetry.Reals.Actions
      , {!!}
 
    ℚ+' : Group 𝓤₁
-   ℚ+' = Lift-group pe fe additive-ℚ
+   ℚ+' = Lift-group additive-ℚ
 
    ℚ+'∣ℝ' : Action ℚ+'
    ℚ+'∣ℝ'
@@ -216,47 +222,59 @@ module DedekindReals.Symmetry.Reals.Actions
 
    ℚ₊ : 𝓤₀ ̇
    ℚ₊ = ⟨ multiplicative-ℚ+ ⟩
-   {-
+
    instance
      canonical-map-ℚ₊-to-ℚ : Canonical-Map ℚ₊ ℚ
      ι {{canonical-map-ℚ₊-to-ℚ}} = pr₁ ∘ pr₁
-   -}
 
    -- can do away with some of the projection reshuffling if
    -- we define the monoid action instead
 
-   multiplicative-ℚ+' : Group 𝓤₁
-   multiplicative-ℚ+' = Lift-group pe fe multiplicative-ℚ+
+   ℚ*' : Group 𝓤₁
+   ℚ*' = Lift-group multiplicative-ℚ
 
-   scale-pred : ⟨ multiplicative-ℚ+ ⟩ → 𝓟 ℚ → 𝓟 ℚ
+   -- It's easier to go this way :(
+   ℚ₊*'◃ℚ*' : Subgroups' ℚ*'
+   ℚ₊*'◃ℚ*' = lift-Ω ∘ ℚ∘-pos ∘ lower
+     , lift _ (unit-closed' multiplicative-ℚ multiplicative-ℚ+-subgroup)
+     , (λ 𝓐 x y z → lift _
+         (mult-closed' multiplicative-ℚ multiplicative-ℚ+-subgroup
+           (lower 𝓐) (lower x) (lower y) (lower z)))
+     , λ 𝓐 x → lift _
+         (inv-closed' multiplicative-ℚ multiplicative-ℚ+-subgroup
+           (lower 𝓐) (lower x))
+
+   ℚ₊*' : Group 𝓤₁
+   ℚ₊*' = induced-group' ℚ*' ℚ₊*'◃ℚ*'
+
+   scale-pred : ⟨ multiplicative-ℚ ⟩ → 𝓟 ℚ → 𝓟 ℚ
    scale-pred p P q
        -- This way around works better with left actions
-     = P (q ℚ* pr₁ (pr₁ p))
-
-   scale-assoc : (p q : ℚ₊) → (P : 𝓟 ℚ) →
-     scale-pred p (scale-pred q P) ＝
-     scale-pred (p ·⟨ multiplicative-ℚ+ ⟩ q) P
-   scale-assoc ((p , p≠0) , p>0) ((q , q≠0) , q>0)  P = nfe-by-fe fe
-     λ x → ap P {! ℚ*-assoc fe x p q !} --(ℚ*-assoc fe x p q)
-        -- {!assoc multiplicative-ℚ pnz qnz (x , ?)!} ⁻¹
-
-   scale-unit : (P : 𝓟 ℚ) →
-     scale-pred (unit multiplicative-ℚ+) P ＝ P
-   scale-unit P = nfe-by-fe fe
-     λ x → {!!} --ap P (ℚ-mult-right-id fe x)
-
+     = P (q ℚ* pr₁ p)
 
    -- Now starts the real work, hopefully
-   ℚ+'∣𝓟ℚ : Action multiplicative-ℚ+'
-   ℚ+'∣𝓟ℚ
+   ℚ*'∣𝓟ℚ : Action ℚ*'
+   ℚ*'∣𝓟ℚ
      = 𝓟 ℚ
      , (λ lp P → scale-pred (lower lp) P)
      , 𝓟-is-set' fe pe
-     , (λ lp lq L → {!!}) --scale-assoc (lower lp) (lower lq) L)
-     , scale-unit
+     , (λ lp lq L →
+         nfe-by-fe fe λ x →
+         ap L (ℚ*-assoc fe x (ι (lower lp)) (ι (lower lq)) ⁻¹))
+     , λ L → nfe-by-fe fe
+       λ x → ap L (ℚ-mult-right-id fe x)
 
-   ℚ*' : Group 𝓤₁
-   ℚ*' = Lift-group pe fe multiplicative-ℚ
+   ℚ₊*'∣𝓟ℚ : Action ℚ₊*'
+   ℚ₊*'∣𝓟ℚ = induced-action ℚ*' ℚ₊*'◃ℚ*' ℚ*'∣𝓟ℚ
+
+   ℚ₊*'∣𝓟ℚ-inhabited-invariant :
+     prop-is-invariant (Lift-group {𝓥 = 𝓤₀ ⁺⁺} ℚ₊*')
+                       (Lift-action ℚ₊*' ℚ₊*'∣𝓟ℚ)
+                       (inhabited-pred ∘ lower)
+   ℚ₊*'∣𝓟ℚ-inhabited-invariant g L with g' ← pr₁ (lower (pr₁ (lower g)))
+     = ∥∥-induction
+     {!!}
+     λ (p , Lp) → ∣ g' ℚ* p  , {!!}   ∣
 
    ℚ*'∣pre-cut-action : action-structure ℚ*' pre-cut
    ℚ*'∣pre-cut-action lpnz r

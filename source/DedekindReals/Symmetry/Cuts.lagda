@@ -74,7 +74,7 @@ module DedekindReals.Symmetry.Cuts
 
      inhabited-pred : 𝓟 (𝓟 X)
      inhabited-pred P =
-       (𝓟∋Sigma (λ _ → X) (lift-pred (P ∘ pr₂))) ⋆
+       (s𝓟∋Sigma X (lift-pred (P ∘ pr₂))) ⋆
 
      inhabited-pred-inhabited : (P : 𝓟 X) →
        ⟨ inhabited-pred P ⟩ → inhabited P

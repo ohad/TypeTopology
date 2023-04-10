@@ -101,14 +101,19 @@ a ∧Ω b = (⟨ a ⟩ × ⟨ b ⟩)
 _∧_ : {𝓤 𝓥 : Universe} {X : 𝓤 ̇} → 𝓟' X → 𝓟' X → 𝓟' {𝓤} {𝓥} X
 P ∧ Q = λ x → P x ∧Ω Q x
 
+infixr 4 _∧_
+
 𝓟contra-map : {𝓤 𝓥 : Universe } {X Y : 𝓤 ̇} →
   (Y → X) → 𝓟' {𝓥 = 𝓥} X → 𝓟' {𝓤} {𝓥} Y
 𝓟contra-map f P = P ∘ f
 
+lift-Ω : {𝓥 𝓥' : Universe}  →
+  Ω 𝓥 → Ω (𝓥 ⊔ 𝓥')
+lift-Ω {𝓥' = 𝓥'} P = Lift 𝓥' ⟨ P ⟩ , lift-is-prop (holds-is-prop P)
+
 lift-pred : {𝓤 𝓥 𝓥' : Universe} {X : 𝓤 ̇} →
   𝓟' {𝓤} {𝓥} X → 𝓟' {𝓤} {𝓥 ⊔ 𝓥'} X
-lift-pred {𝓥' = 𝓥'} P x = (Lift 𝓥' ⟨ P x ⟩)
-              , (lift-is-prop (holds-is-prop (P x)))
+lift-pred {𝓥' = 𝓥'} = lift-Ω ∘_
 
 -- not sure whether I'm actually using these
 
@@ -141,15 +146,23 @@ module SurelyThisExistsSomewhere
   ptwise-is-prop' : {X : 𝓤 ̇} → {F : X → 𝓤 ̇} →
      ((x : X) → is-prop (F x)) → is-prop ((x : X) → F x)
   ptwise-is-prop' {F = F} = ptwise-is-prop F
+
+  _⇒Ω_ : Ω 𝓤 → Ω 𝓤 → Ω 𝓤
+  P ⇒Ω Q = (⟨ P ⟩ → ⟨ Q ⟩) , ptwise-is-prop (λ _ → ⟨ Q ⟩) (λ _ → holds-is-prop Q)
+
+  _⇔Ω_ : Ω 𝓤 → Ω 𝓤 → Ω 𝓤
+  P ⇔Ω Q = (P ⇒Ω Q) ∧Ω (Q ⇒Ω P)
+
   _⇒_ : {𝓤 𝓥 : Universe}
      {X : 𝓤 ̇} → (x y : 𝓟' {𝓤} {𝓥} X) →  𝓟' {𝓤} {𝓥} X
   _⇒_ {𝓤} {X} U V
-     = λ x → (⟨ U x ⟩ → ⟨ V x ⟩)
-     , ptwise-is-prop (λ _ → ⟨ V x ⟩) λ _ → holds-is-prop (V x)
+     = λ x → U x ⇒Ω V x
 
   _⟺_ : {𝓤 𝓥 : Universe}
      {X : 𝓤 ̇} → (x y : 𝓟' {𝓤} {𝓥} X) →  𝓟' {𝓤} {𝓥} X
   P ⟺ Q = (P ⇒ Q) ∧ (Q ⇒ P)
+
+  infixr 3 _⇒_ _⇒Ω_
 
   prop-eq : {𝓤 𝓥 : Universe}
      {X : 𝓤 ̇} → (X-is-set : is-set X) → (P Q : 𝓟' {𝓤} {𝓥} X) →

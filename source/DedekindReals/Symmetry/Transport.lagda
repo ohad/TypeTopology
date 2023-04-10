@@ -43,9 +43,9 @@ open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 
 module DedekindReals.Symmetry.Transport
-       {𝓥 : Universe}
        (pe : Prop-Ext)
        (fe : Fun-Ext)
+       {𝓥 : Universe}
        where
   Lift-group : Group 𝓤 → Group (𝓤 ⊔ 𝓥)
   Lift-group G
