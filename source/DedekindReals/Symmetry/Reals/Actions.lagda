@@ -169,7 +169,7 @@ module DedekindReals.Symmetry.Reals.Actions
    -- needed because Groups.Subgroups uses it instead
    -- of weaker assumptions
    ua : Univalence
-   ua = {!remove me!}
+   ua = {!remove me --might be jamming everything!}
 
    multiplicative-ℚ+-subgroup
      : Subgroups 𝓤₀ ua multiplicative-ℚ
@@ -236,8 +236,8 @@ module DedekindReals.Symmetry.Reals.Actions
    scale-assoc : (p q : ℚ₊) → (P : 𝓟 ℚ) →
      scale-pred p (scale-pred q P) ＝
      scale-pred (p ·⟨ multiplicative-ℚ+ ⟩ q) P
-   scale-assoc ((p , _) , _) ((q , _) , _)  P = nfe-by-fe fe
-     λ x → ap P {!!} --(ℚ*-assoc fe x p q)
+   scale-assoc ((p , p≠0) , p>0) ((q , q≠0) , q>0)  P = nfe-by-fe fe
+     λ x → ap P {! ℚ*-assoc fe x p q !} --(ℚ*-assoc fe x p q)
         -- {!assoc multiplicative-ℚ pnz qnz (x , ?)!} ⁻¹
 
    scale-unit : (P : 𝓟 ℚ) →
