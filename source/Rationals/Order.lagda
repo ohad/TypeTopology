@@ -288,6 +288,19 @@ rounded-lemma₀ (succ a) = succ (2 ℕ* pred (succ (succ a))) ＝⟨ ap (λ - �
 ℚ<-addition-preserves-order (p , _) (q , _) (r , _) l =
  toℚ-< (p ℚₙ+ r) (q ℚₙ+ r) (ℚₙ<-addition-preserves-order p q r l)
 
+ℚ<-addition-preserves-order-right : (p q r : ℚ) → p < q → (p + r) < (q + r)
+ℚ<-addition-preserves-order-right = ℚ<-addition-preserves-order
+
+ℚ<-addition-preserves-order-left : (r p q : ℚ) → p < q → (r + p) < (r + q)
+ℚ<-addition-preserves-order-left r p q p<q =
+  transport c1 (ℚ+-comm p r)
+  (transport c2 (ℚ+-comm q r)
+  (ℚ<-addition-preserves-order-right p q r p<q))
+  where
+    c1 c2 : ℚ → 𝓤₀ ̇
+    c1 u = u <ℚ (r + q)
+    c2 u = (p + r) <ℚ u
+
 ℚ<-adding : (p q r s : ℚ) → p < q → r < s → p + r < q + s
 ℚ<-adding (p , _) (q , _) (r , _) (s , _) l₁ l₂ = toℚ-< (p ℚₙ+ r) (q ℚₙ+ s) I
  where

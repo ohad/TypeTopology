@@ -16,6 +16,7 @@ open import Integers.Addition renaming (_+_ to _ℤ+_)
 open import Integers.Type
 open import Integers.Multiplication renaming (_*_ to _ℤ*_)
 open import Integers.Order
+open import Integers.Negation renaming (-_ to ℤ-_)
 open import Naturals.Addition renaming (_+_ to _ℕ+_)
 open import Naturals.Multiplication renaming (_*_ to _ℕ*_)
 open import Rationals.Fractions
@@ -217,6 +218,25 @@ p ℚₙ> q = q ℚₙ< p
 
 2/3ℚₙ≤1 : (pos 2 , 2) ℚₙ≤ (pos 1 , 0)
 2/3ℚₙ≤1 = 1 , refl
+
+ℚ<-negative-is-negative : (x a : ℕ) → (negsucc x , a) ℚₙ< (pos 0 , 0)
+ℚ<-negative-is-negative x a
+  = x
+  , (succℤ (negsucc x) +pos x
+       ＝⟨ refl ⟩
+     succℤ ((ℤ- (pos (succ x)))) +pos x
+       ＝⟨ ap (_+pos x)
+          (succℤtominuspredℤ (pos (succ x))) ⟩
+     ℤ- (predℤ (pos (succ x))) +pos x
+       ＝⟨ refl ⟩
+     (ℤ- pos x) +pos x
+       ＝⟨ ℤ-sum-of-inverse-is-zero' (pos x) ⟩
+     pos 0
+       ＝⟨ refl ⟩
+     pos zero ℤ+ pos a ℤ* pos zero
+       ＝⟨ ap (pos zero ℤ+_)
+          (ℤ*-comm (pos a) (pos zero)) ⟩
+     pos zero ℤ+ pos zero ℤ* pos a ∎)
 
 negative-not-greater-than-zero : (x a : ℕ) → ¬ ((pos 0 , 0) ℚₙ<( negsucc x , a))
 negative-not-greater-than-zero x a (n , l) = negsucc-not-pos I

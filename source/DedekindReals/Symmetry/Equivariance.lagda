@@ -41,66 +41,62 @@ open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 
 module DedekindReals.Symmetry.Equivariance where
-module FixedUniverse {𝓤 : Universe} where
-  is-dep-equivariant : (G : Group 𝓤) → (A : Action G) →
-    ((⟨B⟩ , structure) : ⟨ G ∣ A ⟩-indexed-action) →
-    (f : (a : ⟨ A ⟩) → ⟨B⟩ a) → 𝓤 ⁺ ̇
-  is-dep-equivariant G A B f
+is-dep-equivariant : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    ((⟨B⟩ , structure) : ⟨_∣_⟩-indexed-action {𝓦 = 𝓦} G A) →
+    (f : (a : ⟨ A ⟩) → ⟨B⟩ a) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
+is-dep-equivariant G A B f
     = (g : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
     (f (g ◂⟨ G ∣ A ⟩ a)) ≈ (g ◃⟨ G ∣ A ∣ B ⟩ (f a))
 
-  invariant : (G : Group 𝓤) → (A : Action G) →
-    (⟨B⟩ : 𝓤 ̇) → is-set ⟨B⟩ →
-    (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ⁺ ̇
-  invariant G A ⟨B⟩ ⟨B⟩set f =
+invariant : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (⟨B⟩ : 𝓦 ̇) → is-set ⟨B⟩ →
+    (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
+invariant G A ⟨B⟩ ⟨B⟩set f =
     is-dep-equivariant G A (const-action G A ⟨B⟩ ⟨B⟩set) f
 
-  invariant' : (G : Group 𝓤) → (A : Action G) →
-    (⟨B⟩ : 𝓤 ̇) → is-set ⟨B⟩ →
-    (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ̇
-  invariant' G A ⟨B⟩ ⟨B⟩set f =
+invariant' : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (⟨B⟩ : 𝓦 ̇) → is-set ⟨B⟩ →
+    (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
+invariant' G A ⟨B⟩ ⟨B⟩set f =
     (g : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
     ((f (g ◂⟨ G ∣ A ⟩ a)) ＝ (f a))
 
-  invariant-by-invariant' :
-    (G : Group 𝓤) → (A : Action G) →
-    (⟨B⟩ : 𝓤 ̇) → (⟨B⟩set : is-set ⟨B⟩) →
+invariant-by-invariant' :
+    (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (⟨B⟩ : 𝓦 ̇) → (⟨B⟩set : is-set ⟨B⟩) →
     (f : ⟨ A ⟩ → ⟨B⟩) → invariant' G A ⟨B⟩ ⟨B⟩set f →
     invariant G A ⟨B⟩ ⟨B⟩set f
-  invariant-by-invariant' G A ⟨B⟩ ⟨B⟩set f inv' g a =
+invariant-by-invariant' G A ⟨B⟩ ⟨B⟩set f inv' g a =
     hetero-by-homo (inv' g a)
 
-  invariant'-by-invariant :
-    (G : Group 𝓤) → (A : Action G) →
-    (⟨B⟩ : 𝓤 ̇) → (⟨B⟩set : is-set ⟨B⟩) →
+invariant'-by-invariant :
+    (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (⟨B⟩ : 𝓦 ̇) → (⟨B⟩set : is-set ⟨B⟩) →
     (f : ⟨ A ⟩ → ⟨B⟩) → invariant G A ⟨B⟩ ⟨B⟩set f →
     invariant' G A ⟨B⟩ ⟨B⟩set f
-  invariant'-by-invariant G A ⟨B⟩ ⟨B⟩set f invar g a
+invariant'-by-invariant G A ⟨B⟩ ⟨B⟩set f invar g a
     with invar g a
-  ... | NB: .(f a) since arefl and prf = {!!} --prf
+... | NB: .(f a) since arefl and prf = {!!} --prf
 
-open FixedUniverse public
 
 open DedekindReals.Symmetry.UF.SurelyThisExistsSomewhere
 
 -- For propositions, we can get therefore get invariance more easily
 prop-is-invariant :
-    {𝓤 : Universe} →
-    (G : Group (𝓤 ⁺)) → (A : Action G) →
-    (P : ⟨ A ⟩ → Ω 𝓤) → 𝓤 ⁺ ̇
+    (G : Group 𝓤 ) → (A : Action' {𝓥 = 𝓥} G) →
+    (P : ⟨ A ⟩ → Ω 𝓦) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
 prop-is-invariant G A P =
   ((g : ⟨ G ⟩) → (a : ⟨ A ⟩) → ⟨ P a ⟩ → ⟨ P (g ◂⟨ G ∣ A ⟩ a) ⟩)
 
 invariant-proposition :
     (pe : Prop-Ext) (fe : Fun-Ext)
-    {𝓤 : Universe} →
-    (G : Group (𝓤 ⁺)) → (A : Action G) →
-    (P : ⟨ A ⟩ → Ω 𝓤) →
+    (G : Group 𝓤 ) → (A : Action' {𝓥 = 𝓥} G) →
+    (P : ⟨ A ⟩ → Ω 𝓦) →
     prop-is-invariant G A P →
-    invariant {𝓤 ⁺} G A (Ω 𝓤) prop-is-set P
-invariant-proposition pe fe {𝓤} G A P prf =
+    invariant {𝓦 = 𝓦 ⁺} G A (Ω 𝓦) prop-is-set P
+invariant-proposition {𝓤 = 𝓤} {𝓦 = 𝓦} pe fe G A P prf =
   invariant-by-invariant'
-    G A (Ω 𝓤) prop-is-set P λ g →
+    G A (Ω 𝓦) prop-is-set P λ g →
     equiv-by-eq
     (prop-eq pe fe
     (carrier-is-set G A) (P ∘ (λ a → g ◂⟨ G ∣ A ⟩ a)) P
@@ -119,10 +115,9 @@ invariant-proposition pe fe {𝓤} G A P prf =
       λ ⟨Pa⟩ → prf g a ⟨Pa⟩)
 
 invariant-proposition-prop-is-invariant :
-    {𝓤 : Universe} →
-    (G : Group (𝓤 ⁺)) → (A : Action G) →
-    (P : ⟨ A ⟩ → Ω 𝓤) →
-    invariant {𝓤 ⁺} G A (Ω 𝓤) prop-is-set P →
+    (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (P : ⟨ A ⟩ → Ω 𝓦) →
+    invariant G A (Ω 𝓦) prop-is-set P →
     prop-is-invariant G A P
 invariant-proposition-prop-is-invariant G A P invar g a ⟨Pa⟩
   = transport ⟨_⟩

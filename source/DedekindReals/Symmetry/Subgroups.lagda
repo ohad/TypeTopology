@@ -54,25 +54,26 @@ module DedekindReals.Symmetry.Subgroups
        where
 
     open DedekindReals.Symmetry.UF.SurelyThisExistsSomewhere pe fe
-    open import DedekindReals.Symmetry.MetaRelations pe pt fe ⟨ G ⟩ (group-is-set G)
+    open import DedekindReals.Symmetry.MetaRelations pe pt fe
+    open SetConstructions ⟨ G ⟩ (group-is-set G)
 
-    is-unit-closed' : 𝓟 (𝓟 ⟨ G ⟩)
-    is-unit-closed' = (λ 𝓐 → lift-pred 𝓐 (unit G))
+    is-unit-closed' : {𝓦 : Universe} → 𝓟' {𝓥 = 𝓥 ⊔ 𝓦 } (𝓟' {𝓥 = 𝓥} ⟨ G ⟩)
+    is-unit-closed' = (λ 𝓐 → lift-Ω (𝓐 (unit G)))
 
-    is-mult-closed' : 𝓟 (𝓟 ⟨ G ⟩)
+    is-mult-closed' : 𝓟' {𝓥 = 𝓤 ⊔ (𝓤 ⊔ 𝓥)} (𝓟' {𝓥 = 𝓥} ⟨ G ⟩)
     is-mult-closed' =
-      (s𝓟∋Pi (Lift _ ⟨ G ⟩) (s𝓟∋Pi (Lift _ ⟨ G ⟩) λ ((𝓐 , lx) , ly) →
-          𝓐 (lower lx) ⇒Ω
-          𝓐 (lower ly) ⇒Ω
-          𝓐 (lower lx ·⟨ G ⟩ (lower ly))))
+      (s𝓟∋Pi ⟨ G ⟩ (s𝓟∋Pi ⟨ G ⟩ λ ((𝓐 , lx) , ly) →
+          𝓐 lx ⇒Ω
+          𝓐 ly ⇒Ω
+          𝓐 (lx ·⟨ G ⟩ ly)))
 
-    is-inv-closed' : 𝓟 (𝓟 ⟨ G ⟩)
-    is-inv-closed' = s𝓟∋Pi (Lift _ ⟨ G ⟩) λ (𝓐 , lx) →
-          𝓐 (lower lx) ⇒Ω 𝓐 (inv G (lower lx))
+    is-inv-closed' : 𝓟' {𝓥 = 𝓤 ⊔ 𝓥} (𝓟' {𝓥 = 𝓥} ⟨ G ⟩)
+    is-inv-closed' = s𝓟∋Pi ⟨ G ⟩ λ (𝓐 , lx) →
+          𝓐 lx ⇒Ω 𝓐 (inv G lx)
 
-    is-group-closed' : 𝓟 (𝓟 ⟨ G ⟩)
-    is-group-closed'
-      = is-unit-closed'
+    is-group-closed' : 𝓟' {𝓥 = 𝓤 ⊔ 𝓥} (𝓟' {𝓥 = 𝓥} ⟨ G ⟩)
+    is-group-closed' {𝓥 = 𝓥}
+      = is-unit-closed' {𝓦 = 𝓤 ⊔ 𝓥}
       ∧ is-mult-closed'
       ∧ is-inv-closed'
 
@@ -95,7 +96,7 @@ module DedekindReals.Symmetry.Subgroups
     induced-group' ( 𝓐 , (unit-closed , mult-closed , inv-closed))
       = (Σ g ꞉ ⟨ G ⟩ , ⟨ 𝓐 g ⟩)
       , (λ (g , ⟨𝓐g⟩) (h , ⟨𝓐h⟩) → g ·⟨ G ⟩ h
-           , mult-closed (lift _ g) (lift _ h) ⟨𝓐g⟩ ⟨𝓐h⟩)
+           , mult-closed g h  ⟨𝓐g⟩ ⟨𝓐h⟩)
       , sigma-is-set (group-is-set G) (λ g → props-are-sets (holds-is-prop (𝓐 g)))
       , (λ (x , x∈𝓐) (y , y∈𝓐) (z , z∈𝓐) → to-subtype-＝ (holds-is-prop ∘ 𝓐)
         (assoc G x y z))
@@ -103,12 +104,13 @@ module DedekindReals.Symmetry.Subgroups
       , (λ (x , x∈𝓐) → to-subtype-＝ (holds-is-prop ∘ 𝓐) (unit-left  G x))
       , (λ (x , x∈𝓐) → to-subtype-＝ (holds-is-prop ∘ 𝓐) (unit-right G x))
       , λ (g , g∈𝓐) →
-        (inv G g , inv-closed (lift _ g) (g∈𝓐))
+        (inv G g , inv-closed g (g∈𝓐))
       , to-subtype-＝ (holds-is-prop ∘ 𝓐) (inv-left  G g)
       , to-subtype-＝ (holds-is-prop ∘ 𝓐) (inv-right G g)
 
     induced-action :
-      (G-closed : Subgroups') → Action G → Action (induced-group' G-closed)
+      (G-closed : Subgroups') → Action' {𝓥 = 𝓥} G →
+                                Action' {𝓥 = 𝓥} (induced-group' G-closed)
     induced-action (𝓐 , _) A
       = ⟨ A ⟩
       , (λ g a →  pr₁ g  ◂⟨ G ∣ A ⟩ a)

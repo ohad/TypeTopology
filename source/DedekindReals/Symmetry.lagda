@@ -75,7 +75,7 @@ down to the proof-sketch (starting with the words 'Here's the plan.').
 
 \begin{code}
 module DedekindReals.Symmetry where
-{-
+
 
 module Multiplication
          (pe : Prop-Ext)
@@ -87,15 +87,7 @@ module Multiplication
    open import Rationals.MinMax fe
    open import DedekindReals.Type pe pt fe
    open PropositionalTruncation pt
-   open SurelyThisExistsSomewhere pe fe using (_⟺_)
 
-
-   module Cuts {𝓤 : Universe} {X : 𝓤 ̇} (Xset : is-set X) where
-     open Relations pe fe X Xset
-     open RelationsRelations pe fe X Xset
-     open Transitivity pe fe {𝓤₀ = 𝓤} X Xset
-
-   open Cuts {X = ℚ} (ℚ-is-set fe)
 \end{code}
 
    Multiplication is defined as in the HoTT Book. It reminds of interval multiplication of rational numbers.
@@ -165,7 +157,7 @@ module Multiplication
            II ((a , b , c , d) , a<x , x<b , c<x , x<d , p'<MIN) = (a , b , c , d) , a<x , x<b , c<x , x<d , ℚ<-trans p p' (min₄ (a ℚ* c) (a ℚ* d) (b ℚ* c) (b ℚ* d)) p<p' p'<MIN
 
      is-disjoint : disjoint L R
-     is-disjoint p q (p<xy , xy<q) = {!!}
+     --is-disjoint p q (p<xy , xy<q) = {!!}
 
    \end{code}
 
@@ -203,7 +195,7 @@ module Multiplication
      \end{itemize}
    \end{lemma}
    \begin{proof}
-     By definition, we have $p_1 < u < p_2$, $q_1 < u < q_2$ such that,
+     By definition, we have $p_1 < u < p_2$, $q_1 < v < q_2$ such that,
      for all $i,j \in \{1,2\}$: $0 < p_iq_j$.
 
      Assume one of the four rationals $r > 0$, wlog it is $p_1$. Since
@@ -272,7 +264,6 @@ module Multiplication
    \end{proof}
 
    \begin{code}
-     {-
 
      is-disjoint p q (p<xy , xy<q) = ∥∥-rec (ℚ<-is-prop p q) I (binary-choice p<xy xy<q)
       where
@@ -312,6 +303,5 @@ module Multiplication
 
          MAX₂≤q : MAX₂ ≤ q
          MAX₂≤q = ℚ<-coarser-than-≤ MAX₂ q MAX₂<q
-   -}
-   -}
+
    \end{code}

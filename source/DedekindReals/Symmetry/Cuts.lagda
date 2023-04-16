@@ -39,7 +39,6 @@ open import DedekindReals.Symmetry.UF
 open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 open import DedekindReals.Symmetry.Equivariance
-open import DedekindReals.Symmetry.Transport
 open import DedekindReals.Symmetry.S2
 
 module DedekindReals.Symmetry.Cuts
@@ -50,45 +49,46 @@ module DedekindReals.Symmetry.Cuts
  (X : 𝓤 ̇) (Xset : is-set X)
   where
      open DedekindReals.Symmetry.UF.SurelyThisExistsSomewhere pe fe
-     open import DedekindReals.Symmetry.MetaRelations pe pt fe X Xset
-     open import DedekindReals.Symmetry.Relations-S2 pe pt fe X Xset
+     open import DedekindReals.Symmetry.MetaRelations pe pt fe
+     open SetConstructions X Xset
+     open import DedekindReals.Symmetry.Relations-S2 pe pt fe
+     open SetConstructions-S2 X Xset
+     open GroupConstructions
+     open import DedekindReals.Symmetry.S2
      open import DedekindReals.Type pe pt fe
      open PropositionalTruncation pt
+     open import DedekindReals.Symmetry.Transport pe fe
 
      pre-cut-wrt : (_<_ : Rel) → 𝓤 ⁺ ̇
      pre-cut-wrt _ = 𝓟 X × 𝓟 X
 
-     rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
-     rounded-wrt R P = (c𝓟∋Pi {𝓥 = 𝓤 ⁺} X
-           (lift-pred P ⟺
-             s𝓟∋Sigma X
-               (lift-pred R ∧
-                  lift-pred (P ∘ pr₂ ))))
+     rounded-wrt : (R : Rel) → 𝓟' {𝓥 = 𝓤} (𝓟 X)
+     rounded-wrt R P = (c𝓟∋Pi X
+           (P ⟺ s𝓟∋Sigma X ((R ∧ (P ∘ pr₂ ))) ))
 
-     left-rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     left-rounded-wrt : (R : Rel) → 𝓟' (𝓟' X)
      left-rounded-wrt R = rounded-wrt R
 
-     right-rounded-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     right-rounded-wrt : (R : Rel) → 𝓟' (𝓟' X)
      right-rounded-wrt R =
        left-rounded-wrt (opposite R)
 
-     inhabited-pred : 𝓟 (𝓟 X)
-     inhabited-pred P =
-       (s𝓟∋Sigma X (lift-pred (P ∘ pr₂))) ⋆
+     inhabited-pred : 𝓟' (𝓟 X)
+     inhabited-pred P = c𝓟∋Sigma X P
 
-     inhabited-pred-inhabited : (P : 𝓟 X) →
+     inhabited-pred-inhabited : (P : 𝓟' X) →
        ⟨ inhabited-pred P ⟩ → inhabited P
      inhabited-pred-inhabited P
        = ∥∥-induction
          (λ _ →
            inhabited-subsets.being-inhabited-is-prop pt P)
-         λ { (p , Pp) → ∣ p , lower Pp ∣}
+         λ { (p , Pp) → ∣ p , Pp ∣}
 
-     inhabited-inhabited-pred : (P : 𝓟 X) →
+     inhabited-inhabited-pred : (P : 𝓟' X) →
        inhabited P → ⟨ inhabited-pred P ⟩
      inhabited-inhabited-pred P = ∥∥-induction
        (λ _ → holds-is-prop (inhabited-pred P))
-       λ { (p , Pp) → ∣ p , (lift _ Pp) ∣ }
+       λ { (p , Pp) → ∣ p , (Pp) ∣ }
 
-     semi-cut-wrt : (R : Rel) → 𝓟 (𝓟 X)
+     semi-cut-wrt : (R : Rel) → 𝓟' (𝓟' X)
      semi-cut-wrt R = rounded-wrt R ∧ inhabited-pred

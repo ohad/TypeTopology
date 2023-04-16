@@ -44,25 +44,19 @@ open import DedekindReals.Symmetry.Transport
 module DedekindReals.Symmetry.Subactions
          (pe : Prop-Ext)
          (fe : Fun-Ext)
-         {𝓤 : Universe}
-         (G : Group 𝓤) (A : Action G)
+         {𝓤 𝓥 : Universe}
+         (G : Group 𝓤) (A : Action' {𝓥 = 𝓥} G)
        where
 
     open DedekindReals.Symmetry.UF.SurelyThisExistsSomewhere pe fe
 
-    G' : Group (𝓤 ⁺)
-    G' = Lift-group pe fe G
-
-    A' : Action G'
-    A' = Lift-action pe fe G A
-
-    subaction : (P : 𝓟' ⟨ A ⟩) →
-      prop-is-invariant G' A' (P ∘ lower)  →
-      Action G
+    subaction : (P : 𝓟' {𝓥 = 𝓦} ⟨ A ⟩) →
+      prop-is-invariant G A P  →
+      Action' {𝓥 = 𝓥 ⊔ 𝓦} G
     subaction P invar
       = (Sigma ⟨ A ⟩ λ a → P a holds)
       , (λ {g (a , Pa) → (g ◂⟨ G ∣ A ⟩ a)
-                       , invar (lift _ g) (lift _ a) Pa})
+                       , invar g a Pa})
       , sigma-is-set (carrier-is-set G A)
                      (λ a → props-are-sets (holds-is-prop (P a))  )
       , (λ {g h (a , Pa) → to-subtype-＝ (holds-is-prop ∘ P)
@@ -74,14 +68,11 @@ module DedekindReals.Symmetry.Subactions
       , λ x →
         to-subtype-＝ (holds-is-prop ∘ P)
           (action-unit G A (pr₁ x))
-    ∧-invariant : (P Q : 𝓟' ⟨ A ⟩) →
-      prop-is-invariant G' A'
-        (P ∘ lower) →
-      prop-is-invariant G' A'
-        (Q ∘ lower) →
-      prop-is-invariant G' A'
-        (P ∘ lower ∧ Q ∘ lower)
+
+    ∧-invariant : (P Q : 𝓟' {𝓥 = 𝓦} ⟨ A ⟩) →
+      prop-is-invariant G A P →
+      prop-is-invariant G A Q →
+      prop-is-invariant G A (P ∧ Q)
     ∧-invariant P Q pInv qInv g a (⟨Pa⟩ , ⟨Qa⟩)
       = pInv g a ⟨Pa⟩ , qInv g a ⟨Qa⟩
-
 \end{code}

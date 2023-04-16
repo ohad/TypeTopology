@@ -40,25 +40,25 @@ open import DedekindReals.Symmetry.UF
 module DedekindReals.Symmetry.IndexedAction where
 
 module GroupExplicit
-      {𝓤 : Universe} (G : Group 𝓤) (A : Action G) where
+      {𝓤 𝓥 𝓦 : Universe} (G : Group 𝓤) (A : Action' {𝓥 = 𝓥} G) where
   -- heterogeneous equality
 
-  indexed-action-structure-over : (⟨B⟩ : ⟨ A ⟩ → 𝓤 ̇) → 𝓤 ̇
+  indexed-action-structure-over : (⟨B⟩ : ⟨ A ⟩ → 𝓦 ̇) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
   indexed-action-structure-over ⟨B⟩ =
     (g : ⟨ G ⟩) → {x : ⟨ A ⟩} → ⟨B⟩ x → ⟨B⟩ (g ◂⟨ G ∣ A ⟩ x)
 
-  indexed-action-axioms : (⟨B⟩ : ⟨ A ⟩ → 𝓤 ̇) →
-    indexed-action-structure-over ⟨B⟩ → 𝓤 ⁺ ̇
+  indexed-action-axioms : (⟨B⟩ : ⟨ A ⟩ → 𝓦 ̇) →
+    indexed-action-structure-over ⟨B⟩ → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
   indexed-action-axioms ⟨B⟩ _·_ =
       ((a : ⟨ A ⟩) → is-set (⟨B⟩ a))
     × ((g h : ⟨ G ⟩){a : ⟨ A ⟩}(b : ⟨B⟩ a) →
         ((g ·⟨ G ⟩ h) · b) ≈ (g · (g · b))  )
     × ({a : ⟨ A ⟩} → (b : ⟨B⟩ a) → (unit G · b) ≈ b)
 
-  indexed-action-over : (⟨B⟩ : ⟨ A ⟩ → 𝓤 ̇) → 𝓤 ⁺ ̇
+  indexed-action-over : (⟨B⟩ : ⟨ A ⟩ → 𝓦 ̇) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
   indexed-action-over ⟨B⟩ = Σ (indexed-action-axioms ⟨B⟩)
 
-  indexed-action : 𝓤 ⁺ ̇
+  indexed-action : 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
   indexed-action = Σ indexed-action-over
 
   indexed-action-op : ((⟨B⟩ , structure) : indexed-action) →
@@ -68,7 +68,7 @@ module GroupExplicit
   -- The point: an indexed action is an action on the Σ-type that
   -- lives over A
 
-  as-action : {⟨B⟩ : ⟨ A ⟩ → 𝓤 ̇ } →
+  as-action : {⟨B⟩ : ⟨ A ⟩ → 𝓦 ̇ } →
     indexed-action-over ⟨B⟩ → Action-structure G (Σ ⟨B⟩)
   as-action (_·_ , axioms)
     = (λ g → λ { (a , b) → (g ◂⟨ G ∣ A ⟩ a)  , (g · b)})
@@ -93,14 +93,19 @@ module GroupExplicit
 open GroupExplicit public
 
 
-⟨_∣_⟩-indexed-action : (G : Group 𝓤) → (A : Action G) → 𝓤 ⁺ ̇
-⟨ A ∣ G ⟩-indexed-action = Σ (indexed-action-over A G)
+⟨_∣_⟩-indexed-action : {𝓥 𝓦 : Universe} →
+  (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+  𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
+⟨_∣_⟩-indexed-action {𝓦 = 𝓦} A G = Σ (indexed-action-over {𝓦 = 𝓦} A G)
 
-⟨_⟩-indexed-action : {G : Group 𝓤} → (A : Action G) → 𝓤 ⁺ ̇
-⟨_⟩-indexed-action {G = G} A = ⟨ G ∣ A ⟩-indexed-action
+⟨_⟩-indexed-action :
+  {𝓥 𝓦 : Universe} →
+  {G : Group 𝓤} → (A : Action' {𝓥 = 𝓥} G) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
+⟨_⟩-indexed-action {𝓦 = 𝓦}
+  {G = G} A = ⟨_∣_⟩-indexed-action {𝓦 = 𝓦} G A
 
-indexed-action-op-syntax : (G : Group 𝓤) (A : Action G) →
-    ((⟨B⟩ , rest) : ⟨ G ∣ A ⟩-indexed-action) →
+indexed-action-op-syntax : (G : Group 𝓤) (A : Action' {𝓥 = 𝓥} G) →
+    ((⟨B⟩ , rest) : ⟨_∣_⟩-indexed-action {𝓦 = 𝓦} G A) →
     indexed-action-structure-over G A  ⟨B⟩
 indexed-action-op-syntax {𝓤} G A B = indexed-action-op G A B
 syntax indexed-action-op-syntax G A B g y = g ◃⟨ G ∣ A ∣ B ⟩ y

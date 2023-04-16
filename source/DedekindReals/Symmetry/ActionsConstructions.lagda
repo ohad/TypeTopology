@@ -41,7 +41,14 @@ open import DedekindReals.Symmetry.IndexedAction
 module DedekindReals.Symmetry.ActionsConstructions
   {𝓤 : Universe} where
 
-  ptwise : {X Y Z U V W : 𝓤 ̇} → (X → Y → Z) → (U → V → W) → (X × U → Y × V → Z × W)
+  ptwise : {𝓤-X 𝓤-Y 𝓤-Z 𝓤-U 𝓤-V 𝓤-W : Universe}
+    → {X : 𝓤-X ̇}
+    → {Y : 𝓤-Y ̇}
+    → {Z : 𝓤-Z ̇}
+    → {U : 𝓤-U ̇}
+    → {V : 𝓤-V ̇}
+    → {W : 𝓤-W ̇}
+    → (X → Y → Z) → (U → V → W) → (X × U → Y × V → Z × W)
   ptwise f g (x , u) (y , v) = (f x y) , (g u v)
 
   ptwise-group-structure : (G H : Group 𝓤) → group-structure (⟨ G ⟩ × ⟨ H ⟩)
@@ -70,9 +77,11 @@ module DedekindReals.Symmetry.ActionsConstructions
                , ((ap2 _,_ (inv-left G (pr₁ x)) (inv-left H (pr₂ x)))
                ,  (ap2 _,_ (inv-right G (pr₁ x)) (inv-right H (pr₂ x))))}))))))
 
-  ∣_×_ : {G H : Group 𝓤} → (A : Action G) → (B : Action H) →
-    Action (G ⊗ H)
-  ∣_×_ {G} {H} A B
+  ∣_×_ : {𝓥 : Universe} →
+         {G H : Group 𝓤} → (A : Action' {𝓥 = 𝓥} G) →
+                             (B : Action' {𝓥 = 𝓦} H) →
+    Action' {𝓥 = 𝓥 ⊔ 𝓦} (G ⊗ H)
+  ∣_×_ {G = G} {H} A B
     = (⟨ A ⟩ × ⟨ B ⟩)
       , ((ptwise (action-op G A) (action-op H B))
       , (×-is-set (carrier-is-set G A) (carrier-is-set H B))
@@ -81,9 +90,25 @@ module DedekindReals.Symmetry.ActionsConstructions
       , λ w → ap2 _,_ (action-unit G A  (pr₁ w))
                       (action-unit H B (pr₂ w)))
 
+  _⊙_ : {G : Group 𝓤} → (A : Action' {𝓥 = 𝓥} G)
+                       → (B : Action' {𝓥 = 𝓦} G) →
+                       Action' {𝓥 = 𝓥 ⊔ 𝓦} G
+  _⊙_ {G = G} A B
+    = (⟨ A ⟩ × ⟨ B ⟩)
+    , (λ g (a , b) → g ◂⟨ G ∣ A ⟩ a , g ◂⟨ G ∣ B ⟩ b)
+    , ×-is-set (carrier-is-set G A) (carrier-is-set G B)
+    , (λ g h (a , b) → ap2 _,_
+        (action-assoc G A g h a)
+        (action-assoc G B g h b))
+    , λ (a , b) → ap2 _,_
+        (action-unit G A a)
+        (action-unit G B b)
+
+
+
   -- Every constant set has an indexed action:
-  const-action : (G : Group 𝓤) → (A : Action G) →
-    (⟨B⟩ : 𝓤 ̇) → is-set ⟨B⟩ → indexed-action G A
+  const-action : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (⟨B⟩ : 𝓦 ̇) → is-set ⟨B⟩ → indexed-action G A
   const-action G A ⟨B⟩ ⟨B⟩set
     = (λ _ → ⟨B⟩)
     , (λ g b → b)

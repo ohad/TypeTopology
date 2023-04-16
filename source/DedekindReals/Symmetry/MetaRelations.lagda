@@ -39,12 +39,12 @@ open import DedekindReals.Symmetry.UF
 open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 open import DedekindReals.Symmetry.Equivariance
-open import DedekindReals.Symmetry.Transport
 
 module DedekindReals.Symmetry.MetaRelations
      (pe : Prop-Ext)
      (pt : propositional-truncations-exist)
-     (fe : Fun-Ext)
+     (fe : Fun-Ext) where
+  module SetConstructions
      {𝓤₀ : Universe}
      (X : 𝓤₀ ̇) (Xset : is-set X) where
 
@@ -111,7 +111,8 @@ module DedekindReals.Symmetry.MetaRelations
        , ∃-is-prop
 
      -- A simply typed variant
-     s𝓟∋Sigma : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (X × Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+     s𝓟∋Sigma : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : 𝓥 ̇) →
+       𝓟' {𝓤 ⊔ 𝓥} {𝓦} (X × Y) → 𝓟' {𝓤} {𝓥 ⊔ 𝓦} X
      s𝓟∋Sigma Y P x
        = (∃ y ꞉ Y , ⟨ P (x , y) ⟩)
        , ∃-is-prop
@@ -122,7 +123,8 @@ module DedekindReals.Symmetry.MetaRelations
        = (∃ y ꞉ Y , ⟨ P y ⟩)
        , ∃-is-prop
 
-     𝓟∋Pi : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : X → 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (Sigma X Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+     𝓟∋Pi : {𝓤 𝓥 𝓦 : Universe} → {X : 𝓤 ̇} → (Y : X → 𝓥 ̇) →
+       𝓟' {𝓤 ⊔ 𝓥} {𝓦} (Sigma X Y) → 𝓟' {𝓤} {𝓥 ⊔ 𝓦} X
      𝓟∋Pi Y P x
        = ((y : Y x) → ⟨ P (x , y) ⟩)
        -- for some reason I can't use pntwise-is-prop
@@ -130,7 +132,8 @@ module DedekindReals.Symmetry.MetaRelations
            (P (x , y)) (f y) (g y))
 
      -- a simply typed variant
-     s𝓟∋Pi : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇} → (Y : 𝓤 ̇) → 𝓟' {𝓤} {𝓥} (X × Y) → 𝓟' {𝓤} {𝓤 ⊔ 𝓥} X
+     s𝓟∋Pi : {𝓤 𝓥 𝓦 : Universe} → {X : 𝓤 ̇} → (Y : 𝓥 ̇) →
+       𝓟' {𝓤 ⊔ 𝓥} {𝓦} (X × Y) → 𝓟' {𝓤} {𝓥 ⊔ 𝓦} X
      s𝓟∋Pi Y P x
        = ((y : Y) → ⟨ P (x , y) ⟩)
        -- for some reason I can't use pntwise-is-prop
@@ -143,6 +146,5 @@ module DedekindReals.Symmetry.MetaRelations
        -- for some reason I can't use pntwise-is-prop
        , λ f g → nfe-by-fe fe (λ y → holds-is-prop
            (P y) (f y) (g y))
-
 
 \end{code}

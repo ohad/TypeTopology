@@ -50,8 +50,10 @@ module DedekindReals.Symmetry.Reals.Type
  {𝓤 : Universe} where
 
    open DedekindReals.Symmetry.UF.SurelyThisExistsSomewhere pe fe
-   open import DedekindReals.Symmetry.MetaRelations pe pt fe ℚ (ℚ-is-set fe)
-   open import DedekindReals.Symmetry.Relations-S2 pe pt fe ℚ (ℚ-is-set fe)
+   open import DedekindReals.Symmetry.MetaRelations pe pt fe
+   open SetConstructions ℚ (ℚ-is-set fe)
+   open import DedekindReals.Symmetry.Relations-S2 pe pt fe
+   open SetConstructions-S2 ℚ (ℚ-is-set fe)
    open import DedekindReals.Type pe pt fe
    open PropositionalTruncation pt
 
@@ -74,13 +76,13 @@ module DedekindReals.Symmetry.Reals.Type
      = (λ ⟨Lp⟩ →
        ∥∥-induction
          (λ _ → ∃-is-prop)
-         (λ { (q , p<q , Lq) → ∣ q , lower p<q , lower Lq ∣})
-       (pr₁ (lrounded p) (lift _ ⟨Lp⟩)))
+         (λ { (q , p<q , Lq) → ∣ q , p<q , Lq ∣})
+       (pr₁ (lrounded p) (⟨Lp⟩)))
      , ∥∥-induction
          (λ _ → holds-is-prop (L p))
          λ { (q , p<q , Lq) →
-           lower (pr₂ (lrounded p)
-             ∣ q , lift _ p<q , lift _ Lq ∣) }
+           (pr₂ (lrounded p)
+             ∣ q , p<q , Lq ∣) }
 
    rounded-left-left-rounded-wrt-ℚ< :
      (L : 𝓟 ℚ) →
@@ -90,12 +92,12 @@ module DedekindReals.Symmetry.Reals.Type
      = (λ Lp →
        ∥∥-induction
          (λ _ → ∃-is-prop)
-         (λ {(q , p<q , Lq) → ∣ q , lift _ p<q , lift _ Lq ∣})
-         (pr₁ (lrounded p) (lower Lp)))
+         (λ {(q , p<q , Lq) → ∣ q , p<q , Lq ∣})
+         (pr₁ (lrounded p) Lp))
      , ∥∥-induction
-         (λ _ → lift-is-prop (holds-is-prop (L p)))
+         (λ _ → holds-is-prop (L p))
          (λ { (q , p<q , Lq) →
-         lift _ (pr₂ (lrounded p) ∣ q , lower p<q , lower Lq ∣)})
+         (pr₂ (lrounded p) ∣ q , p<q , Lq ∣)})
    -- Boilerplate galore...
 
    right-rounded-wrt-ℚ<-rounded-right :
@@ -106,13 +108,13 @@ module DedekindReals.Symmetry.Reals.Type
      = (λ ⟨Rp⟩ →
        ∥∥-induction
          (λ _ → ∃-is-prop)
-         (λ { (q , p>q , Rq) → ∣ q , lower p>q , lower Rq ∣})
-         (pr₁ (rrounded p) (lift _ ⟨Rp⟩)))
+         (λ { (q , p>q , Rq) → ∣ q , p>q , Rq ∣})
+         (pr₁ (rrounded p) ⟨Rp⟩))
      , ∥∥-induction
          (λ _ → holds-is-prop (R p))
          λ { (q , p>q , Rq) →
-           lower (pr₂ (rrounded p)
-             ∣ q , lift _ p>q , lift _ Rq ∣) }
+           (pr₂ (rrounded p)
+             ∣ q , p>q , Rq ∣) }
 
    rounded-right-right-rounded-wrt-ℚ< :
      (R : 𝓟 ℚ) →
@@ -122,16 +124,16 @@ module DedekindReals.Symmetry.Reals.Type
      = (λ Rp →
        ∥∥-induction
          (λ _ → ∃-is-prop)
-         (λ {(q , p>q , Rq) → ∣ q , lift _ p>q , lift _ Rq ∣})
-         (pr₁ (rrounded p) (lower Rp)))
+         (λ {(q , p>q , Rq) → ∣ q , p>q , Rq ∣})
+         (pr₁ (rrounded p) (Rp)))
      , ∥∥-induction
-         (λ _ → lift-is-prop (holds-is-prop (R p)))
+         (λ _ → (holds-is-prop (R p)))
          (λ { (q , p>q , Rq) →
-         lift _ (pr₂ (rrounded p) ∣ q , lower p>q , lower Rq ∣)})
+         (pr₂ (rrounded p) ∣ q , p>q , Rq ∣)})
 
 
    -- separate out the S₂-symmetric parts of a cut
-   semi-cut : 𝓟 (pre-cut)
+   semi-cut : 𝓟' (pre-cut)
    semi-cut (L , R) =
      (semi-cut-wrt ℚ< L) ∧Ω (semi-cut-wrt ℚ> R)
 
@@ -249,7 +251,5 @@ module DedekindReals.Symmetry.Reals.Type
    instance
      canonical-map-ℚ-to-ℝ' : Canonical-Map ℚ ℝ'
      ι {{canonical-map-ℚ-to-ℝ'}} x = ι {X = ℝ} (ι x)
-
-
 
 \end{code}
