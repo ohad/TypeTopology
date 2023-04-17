@@ -292,11 +292,11 @@ module DedekindReals.Symmetry.Reals.Actions
                Lp
        in ∣ p ℚ* g'' , u ∣)
 
-   pr-⇒ : {𝓤 : Universe} {p q : Ω 𝓤}  →
+   pr-⇒ : {𝓤 𝓥 : Universe} {p : Ω 𝓤} → {q : Ω 𝓥}  →
      ⟨ p ⇔Ω q ⟩ → ⟨ p ⇒Ω q ⟩
    pr-⇒ = pr₁
 
-   pr-⇐ : {𝓤 : Universe} {p q : Ω 𝓤}  →
+   pr-⇐ : {𝓤 𝓥 : Universe} {p : Ω 𝓤}  → {q : Ω 𝓥}  →
      ⟨ p ⇔Ω q ⟩ → ⟨ q ⇒Ω p ⟩
    pr-⇐ = pr₂
 
@@ -444,46 +444,206 @@ module DedekindReals.Symmetry.Reals.Actions
             ＝⟨ ap (p ℚ*_) (unit-left additive-ℚ q') ⟩
           p ℚ* q' ∎
 
+   ℚ-negate-equation : (a b : ℚ) → a < b → - b < - a
+   ℚ-negate-equation a b a<b =
+     - b
+       ＝⟨ -- calculate as follows:
+           - b
+             ＝⟨ unit-right additive-ℚ (- b) ⁻¹ ⟩
+           (- b) ℚ+ 0ℚ
+             ＝⟨ ap ((- b) ℚ+_)
+                 (inv-right additive-ℚ a ⁻¹) ⟩
+           (- b) ℚ+ (a ℚ+ (- a))
+             ＝⟨ assoc additive-ℚ (- b) a (- a) ⁻¹ ⟩
+           ((- b) ℚ+ a) ℚ+ (- a) ∎
+         ⟩
+     ((- b) ℚ+ a) ℚ+ (- a)
+       ≺⟨ _<_ ∣ ℚ<-addition-preserves-order-right
+                 (( - b) ℚ+ a) ((- b) ℚ+ b) (- a)
+                 (ℚ<-addition-preserves-order-left
+                 (- b) a b a<b) ⟩
+     ((- b) ℚ+ b) ℚ+ (- a)
+       ＝⟨ -- calculate as follows:
+           ((- b) ℚ+ b) ℚ+ (- a)
+             ＝⟨ ap (_ℚ+ (- a))
+                (inv-left additive-ℚ b) ⟩
+           0ℚ ℚ+ (- a)
+             ＝⟨ unit-left additive-ℚ (- a) ⟩
+           - a ∎
+         ⟩
+     - a ∎
+
+
    ℚ<-neg-multiplication-antitone : (p q q' : ℚ) → p < 0ℚ →
      q < q' → p ℚ* q > p ℚ* q'
    ℚ<-neg-multiplication-antitone p q q' p<0 q<q' =
-     {!!}
+     (p ℚ* q')
+       ＝⟨ ℚ*-minus-minus fe p q' ⁻¹ ⟩
+     (- p) ℚ* (- q')
+       ≺⟨ _<_ ∣ -p*-q'<-p*-q ⟩
+     (- p) ℚ* (- q)
+       ＝⟨ ℚ*-minus-minus fe p q ⟩
+     p ℚ* q ∎
      where
-       -pq<-pq' : - (p ℚ* q) < - (p ℚ* q')
+       -q'<-q : - q' < - q
+       -q'<-q = ℚ-negate-equation q q' q<q'
+       -p>0 : - p > 0ℚ
+       -p>0 = ℚ-negate-equation p 0ℚ p<0
+       -p*-q'<-p*-q : (- p) ℚ* (- q') < (- p) ℚ* (- q)
+       -p*-q'<-p*-q = ℚ<-pos-multiplication-monotone
+          (- p) (- q') (- q) -p>0 -q'<-q
 
-   -- NB: ℚ-negation-dist-over-mult : Fun-Ext → (p q : ℚ) → (- p) * q ＝ - (p * q)
-   {-
-   rounded-wrt-invariant :
-     prop-is-invariant (Lift-group {𝓤₀ ⁺⁺} (S₂ {𝓤₁}))
-                       (Lift-action (S₂ {𝓤₁}) S₂'∣ℚ□×𝓟ℚ)
-                       (λ RL → rounded-wrt (pr₁ (pr₁ (lower RL)))
-                                           (pr₂ (lower RL)))
+   ℚ-mult-minus-one-negates : (p : ℚ) →
+     (- 1ℚ) ℚ* p ＝ - p
+   ℚ-mult-minus-one-negates p =
+     (- 1ℚ) ℚ* p
+        ＝⟨ ℚ-negation-dist-over-mult-left fe 1ℚ p ⟩
+     - (1ℚ ℚ* p)
+                -- need to use multiplicative monoid
+                -- structure we haven't defined
+        ＝⟨ ap -_ (ℚ-mult-left-id fe p) ⟩
+     - p ∎
 
-   -- I'd like to use a with, but it jams everything :(
-   rounded-wrt-invariant (id∈S₂ , ⋆) RL L∈rounded-wrt-R
-     = L∈rounded-wrt-R
-   rounded-wrt-invariant
-       (flip  , ⋆) (((R , prf) , L) , ⋆) L∈rounded-wrt-R p
+
+   ℚ<-neg-antitone : (p q : ℚ) →
+     p < q → (- q) < (- p)
+   ℚ<-neg-antitone p q p<q =
+     - q
+       ＝⟨ ℚ-mult-minus-one-negates q ⁻¹ ⟩
+     (- 1ℚ) ℚ* q
+       ≺⟨ _<_ ∣ ℚ<-neg-multiplication-antitone
+                (- 1ℚ) p q -1ℚ<0 p<q ⟩
+     (- 1ℚ) ℚ* p
+       ＝⟨ ℚ-mult-minus-one-negates p ⟩
+     - p ∎
+
+   -- There ought to be a proof using the fact that
+   -- the logical connectives are equivariant in some sense
+   rounded-wrt-invariant-wrt-flip-ℚ< :
+     (L : 𝓟 ℚ) →
+     prop-is-invariant-wrt-at
+       S₂ S₂'∣ℚ□×𝓟ℚ
+       (λ {((R , ℚ<∨ℚ>) , L) → rounded-wrt R  L })
+       flip
+       ((ℚ< , inl refl) , L)
+   rounded-wrt-invariant-wrt-flip-ℚ< L L-rounded p
      = (λ L-p → ∥∥-induction
-          (λ _ → ∃-is-prop)
-          (λ (q , -pRq , Lq) →
-            ∣ - q
-              -- We have -pRq
-              -- we need -(-p)R^op(-q) , i.e.
-              --         -q R (- -p)
-            , {!!}
-            , {!!}
-            ∣)
-         (pr-⇒ (L∈rounded-wrt-R (- p)) L-p))
-     , {!!}
+         (λ _ → ∃-is-prop)
+         (λ (q , -p<q , Lq) →
+           ∣ - q
+           , - q
+                 ≺⟨ _<_ ∣ ℚ<-neg-antitone (- p) q -p<q ⟩
+               - (- p)
+                 ＝[ ℚ-minus-minus fe p ⁻¹ ]
+               p ∎
+           , transport (λ r → ⟨ L r ⟩)
+               (ℚ-minus-minus fe q)
+               Lq  ∣)
+         (pr-⇒ (L-rounded (- p)) L-p))
+     , ∥∥-induction
+          (λ _ → holds-is-prop
+            ((flip ◂⟨ S₂ ∣ S₂∣𝓟ℚ ⟩ L)  p))
+          λ (q , q<p , L-q) →
+            pr-⇐ (L-rounded (- p))
+                 ∣ - q , ℚ<-neg-antitone q p q<p , L-q ∣
+   -- blech, we ought to use symmetry
+   rounded-wrt-invariant-wrt-flip-ℚ> :
+     (L : 𝓟 ℚ) →
+     prop-is-invariant-wrt-at
+       S₂ S₂'∣ℚ□×𝓟ℚ
+       (λ {((R , ℚ<∨ℚ>) , L) → rounded-wrt R  L })
+       flip
+       ((ℚ> , inr refl) , L)
+   rounded-wrt-invariant-wrt-flip-ℚ> L L-rounded p
+     = (λ L-p → ∥∥-induction
+         (λ _ → ∃-is-prop)
+         (λ (q , -p>q , Lq) →
+           ∣ - q
+           ,  - q
+                 ≺⟨ _>_ ∣ ℚ<-neg-antitone q (- p) -p>q ⟩
+               - (- p)
+                 ＝[ ℚ-minus-minus fe p ⁻¹ ]
+               p ∎
+           ,  transport (λ r → ⟨ L r ⟩)
+               (ℚ-minus-minus fe q)
+               Lq  ∣)
+         (pr-⇒ (L-rounded (- p)) L-p))
+     , ∥∥-induction
+          (λ _ → holds-is-prop
+            ((flip ◂⟨ S₂ ∣ S₂∣𝓟ℚ ⟩ L)  p))
+          λ (q , q<p , L-q) →
+            pr-⇐ (L-rounded (- p))
+                 ∣ - q ,  ℚ<-neg-antitone p q q<p  , L-q ∣
+
+   rounded-wrt-invariant :
+     prop-is-invariant S₂
+                       S₂'∣ℚ□×𝓟ℚ
+                       λ {((R , ℚ<∨ℚ>) , L) →
+                         rounded-wrt R  L }
+   rounded-wrt-invariant id∈S₂ ((R , ℚ<∨ℚ>) , L) L-rounded
+     = L-rounded
+   rounded-wrt-invariant flip ((.ℚ< , inl refl) , L) L-ℚ<-rounded
+     = rounded-wrt-invariant-wrt-flip-ℚ< L L-ℚ<-rounded
+   rounded-wrt-invariant flip ((.ℚ> , inr refl) , L) L-ℚ>-rounded
+     = rounded-wrt-invariant-wrt-flip-ℚ> L L-ℚ>-rounded
 
    ℚ₊*'∣𝓟ℚ-rounded-right-invariant :
-     prop-is-invariant (Lift-group {𝓥 = 𝓤₀ ⁺⁺} ℚ₊*')
-                       (Lift-action ℚ₊*' ℚ₊*'∣𝓟ℚ)
-                       (rounded-wrt ℚ> ∘ lower)
-   ℚ₊*'∣𝓟ℚ-rounded-right-invariant = {!!}
+     prop-is-invariant ℚ₊*' ℚ₊*'∣𝓟ℚ
+                       (rounded-wrt ℚ>)
+
+
+   -- The reason this argument works:
+   S₂-ℚ₊*'-commute :
+     actions-commute S₂ ℚ₊*' S₂∣𝓟ℚ ℚ₊*'∣𝓟ℚ
+   S₂-ℚ₊*'-commute id∈S₂ ((h , h≠0) , h>0) L = refl
+   S₂-ℚ₊*'-commute flip ((h , h≠0) , h>0) L = nfe-by-fe fe (λ p →
+     ap  L (
+        (- p) ℚ* h
+       ＝⟨ ℚ-negation-dist-over-mult-left fe p h ⟩
+       - (p ℚ* h) ∎
+        ))
+
+   S₂⊗ℚ₊*'∣𝓟ℚ : Action' (S₂ ⊗ ℚ₊*')
+   S₂⊗ℚ₊*'∣𝓟ℚ = merge S₂       S₂∣𝓟ℚ
+                         ℚ₊*' ℚ₊*'∣𝓟ℚ
+                         S₂-ℚ₊*'-commute
+
+   ℚ₊*'∣𝓟ℚ-rounded-right-invariant
+     g@((g₀ , g≠0) , g>0) L L-rounded-right p
+     = transport rounded-right [g◂Lᵒᵖ]ᵒᵖ=g◂L
+       [g◂Lᵒᵖ]ᵒᵖ-rounded-right p
+     where
+       Lᵒᵖ : 𝓟 ℚ
+       Lᵒᵖ = flip ◂⟨ S₂ ∣ S₂∣𝓟ℚ ⟩ L
+
+       Lᵒᵖ-rounded-left : rounded-left Lᵒᵖ
+       Lᵒᵖ-rounded-left = rounded-wrt-invariant
+                          flip ((ℚ> , inr refl) , L)
+                          L-rounded-right
+       g◂Lᵒᵖ : 𝓟 ℚ
+       g◂Lᵒᵖ = g ◂⟨ ℚ₊*' ∣ ℚ₊*'∣𝓟ℚ ⟩ Lᵒᵖ
+       g◂Lᵒᵖ-rounded-left : rounded-left g◂Lᵒᵖ
+       g◂Lᵒᵖ-rounded-left
+         = ℚ₊*'∣𝓟ℚ-rounded-invariant g Lᵒᵖ Lᵒᵖ-rounded-left
+       [g◂Lᵒᵖ]ᵒᵖ : 𝓟 ℚ
+       [g◂Lᵒᵖ]ᵒᵖ = flip ◂⟨ S₂ ∣ S₂∣𝓟ℚ ⟩ g◂Lᵒᵖ
+       [g◂Lᵒᵖ]ᵒᵖ-rounded-right : rounded-right [g◂Lᵒᵖ]ᵒᵖ
+       [g◂Lᵒᵖ]ᵒᵖ-rounded-right
+         = rounded-wrt-invariant
+                          flip ((ℚ< , inl refl) , g◂Lᵒᵖ)
+                          g◂Lᵒᵖ-rounded-left
+       g◂L : 𝓟 ℚ
+       g◂L = g ◂⟨ ℚ₊*' ∣  ℚ₊*'∣𝓟ℚ ⟩ L
+       [g◂Lᵒᵖ]ᵒᵖ=g◂L : [g◂Lᵒᵖ]ᵒᵖ ＝ g◂L
+       [g◂Lᵒᵖ]ᵒᵖ=g◂L = nfe-by-fe fe (λ p → ap L
+         (- ((- p) ℚ* g₀)
+           ＝⟨ ap -_ (ℚ-negation-dist-over-mult-left fe p g₀) ⟩
+           - (- (p ℚ* g₀))
+           ＝⟨ ℚ-minus-minus fe (p ℚ* g₀) ⁻¹ ⟩
+           p ℚ* g₀ ∎
+         ))
    -- Should be done more generally
-   -}
+
    ℚ*'∣pre-cut-action : action-structure multiplicative-ℚ pre-cut
    ℚ*'∣pre-cut-action lpnz r
      with (p , p≠0) ← lpnz | ℚ-trichotomous fe p 0ℚ

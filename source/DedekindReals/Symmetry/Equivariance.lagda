@@ -41,12 +41,18 @@ open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 
 module DedekindReals.Symmetry.Equivariance where
+
+is-dep-equivariant-wrt : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    ((⟨B⟩ , structure) : ⟨_∣_⟩-indexed-action {𝓦 = 𝓦} G A) →
+    (f : (a : ⟨ A ⟩) → ⟨B⟩ a) → (g : ⟨ G ⟩ ) → 𝓥 ⊔ 𝓦 ⁺ ̇
+is-dep-equivariant-wrt G A B f g = (a : ⟨ A ⟩) →
+    (f (g ◂⟨ G ∣ A ⟩ a)) ≈ (g ◃⟨ G ∣ A ∣ B ⟩ (f a))
+
 is-dep-equivariant : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
     ((⟨B⟩ , structure) : ⟨_∣_⟩-indexed-action {𝓦 = 𝓦} G A) →
     (f : (a : ⟨ A ⟩) → ⟨B⟩ a) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ⁺ ̇
 is-dep-equivariant G A B f
-    = (g : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
-    (f (g ◂⟨ G ∣ A ⟩ a)) ≈ (g ◃⟨ G ∣ A ∣ B ⟩ (f a))
+    = (g : ⟨ G ⟩ ) → is-dep-equivariant-wrt G A B f g
 
 invariant : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
     (⟨B⟩ : 𝓦 ̇) → is-set ⟨B⟩ →
@@ -54,12 +60,18 @@ invariant : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
 invariant G A ⟨B⟩ ⟨B⟩set f =
     is-dep-equivariant G A (const-action G A ⟨B⟩ ⟨B⟩set) f
 
+invariant-wrt : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
+    (⟨B⟩ : 𝓦 ̇) → is-set ⟨B⟩ →
+    (f : ⟨ A ⟩ → ⟨B⟩) → (g : ⟨ G ⟩ ) → 𝓥 ⊔ 𝓦 ̇
+invariant-wrt G A ⟨B⟩ ⟨B⟩set f g =
+  (a : ⟨ A ⟩) → ((f (g ◂⟨ G ∣ A ⟩ a)) ＝ (f a))
+
 invariant' : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
     (⟨B⟩ : 𝓦 ̇) → is-set ⟨B⟩ →
     (f : ⟨ A ⟩ → ⟨B⟩) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
 invariant' G A ⟨B⟩ ⟨B⟩set f =
-    (g : ⟨ G ⟩ ) → (a : ⟨ A ⟩) →
-    ((f (g ◂⟨ G ∣ A ⟩ a)) ＝ (f a))
+    (g : ⟨ G ⟩ ) →
+    invariant-wrt G A ⟨B⟩ ⟨B⟩set f g
 
 invariant-by-invariant' :
     (G : Group 𝓤) → (A : Action' {𝓥 = 𝓥} G) →
@@ -82,11 +94,23 @@ invariant'-by-invariant G A ⟨B⟩ ⟨B⟩set f invar g a
 open DedekindReals.Symmetry.UF.SurelyThisExistsSomewhere
 
 -- For propositions, we can get therefore get invariance more easily
+
+prop-is-invariant-wrt-at :
+  (G : Group 𝓤 ) → (A : Action' {𝓥 = 𝓥} G) →
+    (P : ⟨ A ⟩ → Ω 𝓦) → (g : ⟨ G ⟩) → (a : ⟨ A ⟩) → 𝓦 ̇
+prop-is-invariant-wrt-at G A P g a =
+  ⟨ P a ⟩ → ⟨ P (g ◂⟨ G ∣ A ⟩ a) ⟩
+
+prop-is-invariant-wrt : (G : Group 𝓤 ) → (A : Action' {𝓥 = 𝓥} G) →
+    (P : ⟨ A ⟩ → Ω 𝓦) → (g : ⟨ G ⟩) → 𝓥 ⊔ 𝓦 ̇
+prop-is-invariant-wrt G A P g =
+  (a : ⟨ A ⟩) → prop-is-invariant-wrt-at G A P g a
+
 prop-is-invariant :
     (G : Group 𝓤 ) → (A : Action' {𝓥 = 𝓥} G) →
     (P : ⟨ A ⟩ → Ω 𝓦) → 𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
 prop-is-invariant G A P =
-  ((g : ⟨ G ⟩) → (a : ⟨ A ⟩) → ⟨ P a ⟩ → ⟨ P (g ◂⟨ G ∣ A ⟩ a) ⟩)
+  (g : ⟨ G ⟩) → prop-is-invariant-wrt G A P g
 
 invariant-proposition :
     (pe : Prop-Ext) (fe : Fun-Ext)

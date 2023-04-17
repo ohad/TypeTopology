@@ -241,6 +241,33 @@ toℚ-neg fe (x , a) = IV
       - toℚ (x' , a') * toℚ (y' , b')      ＝⟨ ap₂ (λ z z' → - (z * z')) (pr₂ xa ⁻¹) (pr₂ yb ⁻¹) ⟩
       - ((x , a) , α) * ((y , b) , β)      ∎
 
+ℚ-negation-dist-over-mult-left : Fun-Ext →
+  (p q : ℚ) → (- p) * q ＝ - (p * q)
+ℚ-negation-dist-over-mult-left = ℚ-negation-dist-over-mult
+
+ℚ-negation-dist-over-mult-right : Fun-Ext →
+  (p q : ℚ) → p * (- q) ＝ - (p * q)
+ℚ-negation-dist-over-mult-right fe p q
+  = p * (- q)
+      ＝⟨ ℚ*-comm p (- q) ⟩
+    (- q) * p
+      ＝⟨ ℚ-negation-dist-over-mult-left fe q p ⟩
+    - (q * p)
+      ＝⟨ ap -_ (ℚ*-comm q p) ⟩
+    - (p * q) ∎
+
+ℚ*-minus-minus : (fe : Fun-Ext) → (a b : ℚ) →
+  (- a) * (- b) ＝ a * b
+ℚ*-minus-minus fe a b =
+  (- a) * (- b)
+    ＝⟨ ℚ-negation-dist-over-mult-left fe a (- b) ⟩
+  - (a * (- b))
+    ＝⟨ ap -_ (ℚ-negation-dist-over-mult-right fe a b) ⟩
+  - (- (a * b))
+    ＝⟨ ℚ-minus-minus fe (a * b) ⁻¹ ⟩
+  a * b ∎
+
+
 toℚ-subtraction : Fun-Ext → (p q : ℚₙ) → toℚ p - toℚ q ＝ toℚ (p ℚₙ+ (ℚₙ- q))
 toℚ-subtraction fe p q = II
  where

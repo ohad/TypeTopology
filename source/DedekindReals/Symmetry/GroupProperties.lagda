@@ -36,8 +36,8 @@ open import Groups.Subgroups
 open import MLTT.Id
 
 module DedekindReals.Symmetry.GroupProperties where
-  inv-involutive : (G : Group 𝓤) → (g : ⟨ G ⟩) → inv G (inv G g) ＝ g
-  inv-involutive g = {!!} -- fun to be had here
 
+inv-involutive : (G : Group 𝓤) → (g : ⟨ G ⟩) → inv G (inv G g) ＝ g
+inv-involutive g = {!!} -- fun to be had here
 
 \end{code}
