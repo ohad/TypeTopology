@@ -43,6 +43,7 @@ open import DedekindReals.Symmetry.IndexedAction
 open import DedekindReals.Symmetry.ActionsConstructions
 open import DedekindReals.Symmetry.Equivariance
 open import DedekindReals.Symmetry.S2
+open import DedekindReals.Symmetry.GroupProperties
 
 open import DedekindReals.Symmetry.Transitive
 
@@ -236,61 +237,80 @@ module DedekindReals.Symmetry.Reals.Actions
    -- we define the monoid action instead
 
    -- It's easier to go this way :(
-   ℚ₊*'◃ℚ*' : Subgroups' multiplicative-ℚ
-   ℚ₊*'◃ℚ*' = ℚ∘-pos
+   ℚ∘* : Group 𝓤₀
+   ℚ∘* = multiplicative-ℚ
+
+   ℚ₊*◃ℚ*' : Subgroups' multiplicative-ℚ
+   ℚ₊*◃ℚ*' = ℚ∘-pos
      , (unit-closed' multiplicative-ℚ multiplicative-ℚ+-subgroup)
      , (mult-closed' multiplicative-ℚ multiplicative-ℚ+-subgroup)
      , (inv-closed' multiplicative-ℚ multiplicative-ℚ+-subgroup)
 
 
-   ℚ₊*' : Group 𝓤₀
-   ℚ₊*' = induced-group' multiplicative-ℚ ℚ₊*'◃ℚ*'
+   ℚ₊* : Group 𝓤₀
+   ℚ₊* = induced-group' multiplicative-ℚ ℚ₊*◃ℚ*'
 
    scale-pred : ⟨ multiplicative-ℚ ⟩ → 𝓟 ℚ → 𝓟 ℚ
    scale-pred p P q
        -- This way around works better with left actions
-     = P (q ℚ* pr₁ p)
+     = P (pr₁ (inv multiplicative-ℚ p) ℚ* q)
+
+   ℚ∘*∣ℚ : Action (ℚ∘* ᵒᵖ)
+   ℚ∘*∣ℚ
+     = ℚ
+     , (λ pnz x → pr₁ (inv ℚ∘* pnz) ℚ* x)
+     , ℚ-is-set fe
+     , (λ pnz@(p , p≠0) qnz@(q , q≠0) x →
+       let (p' , _) = inv ℚ∘* pnz
+           (q' , _) = inv ℚ∘* qnz
+       in pr₁ (inv ℚ∘* (qnz ·⟨ ℚ∘* ⟩ pnz)) ℚ* x
+                ＝⟨ ap (λ r → (pr₁ r) ℚ* x)
+                    (inv-reverses-multiplication
+                    ℚ∘* qnz pnz) ⟩
+              (p' ℚ* q') ℚ* x
+                ＝⟨ ℚ*-assoc fe p' q' x ⟩
+              p' ℚ* (q' ℚ* x)  ∎)
+     , λ x → pr₁ (inv ℚ∘* (unit ℚ∘*)) ℚ* x
+         ＝⟨ ap (λ r → pr₁ r ℚ* x)
+                (inv-unit-unit ℚ∘*)  ⟩
+         1ℚ ℚ* x
+         ＝⟨ ℚ-mult-left-id fe x  ⟩
+         x ∎
+
+   open GroupConstructions
 
    -- Now starts the real work, hopefully
-   ℚ*'∣𝓟ℚ : Action' multiplicative-ℚ
-   ℚ*'∣𝓟ℚ
-     = 𝓟 ℚ
-     , (λ lp P → scale-pred lp P)
-     , 𝓟-is-set' fe pe
-     , (λ lp lq L →
-         nfe-by-fe fe λ x →
-         ap L (ℚ*-assoc fe x (ι lp) (ι lq) ⁻¹))
-     , λ L → nfe-by-fe fe
-       λ x → ap L (ℚ-mult-right-id fe x)
+   ℚ*'∣𝓟ℚ : Action' ℚ∘*
+   ℚ*'∣𝓟ℚ = RelLiftActionᵒᵖ ℚ∘* ℚ∘*∣ℚ
 
-   ℚ₊*'∣𝓟ℚ : Action' ℚ₊*'
-   ℚ₊*'∣𝓟ℚ = induced-action multiplicative-ℚ ℚ₊*'◃ℚ*' ℚ*'∣𝓟ℚ
+   ℚ₊*∣𝓟ℚ : Action' ℚ₊*
+   ℚ₊*∣𝓟ℚ = induced-action ℚ∘* ℚ₊*◃ℚ*' ℚ*'∣𝓟ℚ
 
-   ℚ₊*'∣𝓟ℚ-inhabited-invariant :
-     prop-is-invariant ℚ₊*'
-                       ℚ₊*'∣𝓟ℚ
+   ℚ₊*∣𝓟ℚ-inhabited-invariant :
+     prop-is-invariant ℚ₊*
+                       ℚ₊*∣𝓟ℚ
                        inhabited-pred
-   ℚ₊*'∣𝓟ℚ-inhabited-invariant ((g , g≠0) , g>0) L
+   ℚ₊*∣𝓟ℚ-inhabited-invariant ((g , g≠0) , g>0) L
      = let (g'' , g''≠0) = inv multiplicative-ℚ (g , g≠0)
        in (∥∥-induction
        (λ _ → ∃-is-prop)
        λ (p , Lp) →
-       let u : ⟨ L ((p ℚ* g'') ℚ* g) ⟩
+       let u : ⟨ L (g'' ℚ* (g ℚ* p)) ⟩
            u = transport (λ ℓ → ⟨ L ℓ ⟩)
                (p
-                  ＝⟨ ℚ-mult-right-id fe p ⁻¹ ⟩
-                p ℚ* 1ℚ
-                  ＝⟨ ap (p ℚ*_)
+                  ＝⟨ ℚ-mult-left-id fe p ⁻¹ ⟩
+                1ℚ ℚ* p
+                  ＝⟨ ap (_ℚ* p)
                       (ap pr₁
                       (inv-left multiplicative-ℚ
                         (g , g≠0))
                       ⁻¹) ⟩
-                p ℚ* (g'' ℚ* g)
-                  ＝⟨ ℚ*-assoc fe p g'' g ⁻¹ ⟩
-                (p ℚ* g'') ℚ* g ∎
+                (g'' ℚ* g) ℚ* p
+                  ＝⟨ ℚ*-assoc fe g'' g p ⟩
+                g'' ℚ* (g ℚ* p) ∎
                )
                Lp
-       in ∣ p ℚ* g'' , u ∣)
+       in ∣ g ℚ* p  , u ∣)
 
    pr-⇒ : {𝓤 𝓥 : Universe} {p : Ω 𝓤} → {q : Ω 𝓥}  →
      ⟨ p ⇔Ω q ⟩ → ⟨ p ⇒Ω q ⟩
@@ -300,107 +320,12 @@ module DedekindReals.Symmetry.Reals.Actions
      ⟨ p ⇔Ω q ⟩ → ⟨ q ⇒Ω p ⟩
    pr-⇐ = pr₂
 
-   -- TODO: maybe we can use symmetric programming to
-   -- discharge these?
-
-   pq<l⇔p<l/q : (p q r : ℚ) → (q≠0 : ¬(q ＝ 0ℚ)) →
-         ⟨ ℚ< (p ℚ* q , r) ⇔Ω
-          (ℚ< (p , r ℚ* ι (inv multiplicative-ℚ (q , q≠0)))) ⟩
-
-   x∈pL⇔x/p∈L : (x p : ℚ) → (L : 𝓟 ℚ) →
-     (p≠0 : ¬ (p ＝ 0ℚ)) →
-     ⟨ ((p , p≠0) ◂⟨ multiplicative-ℚ ∣ ℚ*'∣𝓟ℚ ⟩ L) x ⇔Ω
-       L (x ℚ* ι (inv multiplicative-ℚ (p , p≠0))) ⟩
-
-   ℚ₊*'∣𝓟ℚ-rounded-invariant :
-     prop-is-invariant ℚ₊*'
-                       ℚ₊*'∣𝓟ℚ
-                       (rounded-wrt ℚ<)
-   ℚ₊*'∣𝓟ℚ-rounded-invariant ((g , g≠0) , g>0) L L-rounded p
-     = let (g' , g'≠0) = inv multiplicative-ℚ (g , g≠0)
-           (Lpg⇒∃ , Lpg⇐∃) = L-rounded (p ℚ* g)
-       in
-       (λ Lpg → ∥∥-induction
-                  (λ _ → ∃-is-prop)
-                  (λ (q , pg<q , Lq) →
-                    ∣ q ℚ* g'
-                      , (pr-⇒ (pq<l⇔p<l/q p g q g≠0)
-                        (pg<q))
-                        -- we have Lq
-                        -- we need L((q * g') * g)
-                      , transport (λ x → ⟨ L x ⟩ )
-                          (q
-                            ＝⟨ ℚ-mult-right-id fe q ⁻¹ ⟩
-                          q ℚ* 1ℚ
-                            ＝⟨ ap (λ x → q ℚ* ι x)
-                            (inv-left multiplicative-ℚ
-                              (g , g≠0)) ⁻¹ ⟩
-                          q ℚ* (g' ℚ* g)
-                            ＝⟨ ℚ*-assoc fe q g' g ⁻¹ ⟩
-                           (q ℚ* g') ℚ* g ∎)
-                          Lq ∣)
-                  (Lpg⇒∃ Lpg))
-       , ∥∥-induction
-           (λ _ → holds-is-prop (L (p ℚ* g)))
-           (λ (q , p<q , Lqg) →
-              (Lpg⇐∃ ∣ q ℚ* g ,
-              (ℚ<-pos-multiplication-preserves-order' fe
-                p q g p<q g>0)
-              , Lqg ∣ ))
-
    -1ℚ<0 : - 1ℚ < 0ℚ
    -1ℚ<0 = ℚ<-negative-is-negative 0 1
 
    -1ℚ≠0 : ¬ (- 1ℚ ＝ 0ℚ)
    -1ℚ≠0 -1ℚ=0ℚ = ℚ<-not-itself (- 1ℚ)
      (transport ((- 1ℚ) <ℚ_) (-1ℚ=0ℚ ⁻¹) -1ℚ<0)
-
-   S₂ᵒᵖ∣ℚ : Action (S₂ ᵒᵖ)
-   S₂ᵒᵖ∣ℚ
-     = ℚ
-     , (λ { id∈S₂ x → x
-          ; flip  x → - x
-          })
-     , ℚ-is-set fe
-     , (λ { g id∈S₂ x → refl
-          ; id∈S₂ flip x → refl
-          ; flip flip x → ℚ-minus-minus fe x
-          })
-     , λ x → refl
-
-
-   open GroupConstructions
-
-   S₂∣𝓟ℚ : Action' S₂
-   S₂∣𝓟ℚ = RelLiftActionᵒᵖ S₂ S₂ᵒᵖ∣ℚ
-
-   -- The point: rounded-right is not invariant, but rounded-wrt it
-
-   ℚ□ : 𝓟 (Rel)
-   ℚ□ = ((only (𝓟-is-set' fe pe) ℚ<) ⊕
-          (only (𝓟-is-set' fe pe) ℚ>))
-          -- Show that ℚ< ≠ ℚ>
-          λ { .ℚ< (refl , ℚ>=ℚ<) → ℚ<-not-itself 0ℚ
-            (ℚ<-trans 0ℚ 1ℚ 0ℚ
-              (ℚ-zero-less-than-positive 0 1)
-              (transport (λ P → ⟨ P (1ℚ , 0ℚ) ⟩)
-                ℚ>=ℚ<
-                (ℚ-zero-less-than-positive 0 1)))}
-
-
-   S₂∣ℚ□◃Rel : prop-is-invariant S₂ S₂∣Rel ℚ□
-   S₂∣ℚ□◃Rel id∈S₂ P prf = prf
-   S₂∣ℚ□◃Rel flip .ℚ< (inl refl) = inr refl
-   S₂∣ℚ□◃Rel flip .(opposite ℚ<) (inr refl)
-     = inl refl
-
-   S₂∣ℚ□ : Action' S₂
-   S₂∣ℚ□ = subaction S₂ S₂∣Rel ℚ□ S₂∣ℚ□◃Rel
-
-   -- Plan:
-
-   S₂'∣ℚ□×𝓟ℚ : Action' S₂
-   S₂'∣ℚ□×𝓟ℚ = S₂∣ℚ□ ⊙ S₂∣𝓟ℚ
 
    ℚ<-pos-multiplication-monotone : (p q q' : ℚ) → p > 0ℚ →
      q < q' → p ℚ* q < p ℚ* q'
@@ -517,6 +442,136 @@ module DedekindReals.Symmetry.Reals.Actions
        ＝⟨ ℚ-mult-minus-one-negates p ⟩
      - p ∎
 
+
+
+   -- TODO: maybe we can use symmetric programming to
+   -- discharge these?
+
+   p/q<l⇔p<ql : (((q , q≠0) , q>0) : ⟨ ℚ₊* ⟩) → (p r : ℚ) →
+         ⟨ ℚ< (ι (inv multiplicative-ℚ (q , q≠0)) ℚ* p , r) ⇔Ω
+          (ℚ< (p , q ℚ* r)) ⟩
+   p/q<l⇔p<ql ((q , q≠0) , q>0) p r
+     = let ((q' , q'≠0) , q'>0)  = inv ℚ₊* ((q , q≠0) , q>0) in
+       (λ p/q<r →
+         p
+         ＝[ --calculate:
+             p
+               ＝⟨ ℚ-mult-left-id fe p ⁻¹ ⟩
+             1ℚ ℚ* p
+               ＝⟨ ap (λ x → ι x ℚ* p)
+                    (inv-right ℚ∘* (q , q≠0)) ⁻¹ ⟩
+             (q ℚ* q') ℚ* p
+               ＝⟨ ℚ*-assoc fe q q' p ⟩
+             q ℚ* (q' ℚ* p) ∎
+           ]
+         q ℚ* (q' ℚ* p)
+           ≺⟨ _<_ ∣ ℚ<-pos-multiplication-monotone
+                    q (q' ℚ* p) r q>0 p/q<r ⟩
+         q ℚ* r ∎)
+     , λ p<qr →
+         q' ℚ* p
+           ≺⟨ _<_ ∣ ℚ<-pos-multiplication-monotone
+                    q' p (q ℚ* r) q'>0 p<qr ⟩
+         q' ℚ* (q ℚ* r)
+           ＝[ -- calculate
+               q' ℚ* (q ℚ* r)
+                 ＝⟨ ℚ*-assoc fe q' q r ⁻¹ ⟩
+               (q' ℚ* q) ℚ* r
+                 ＝⟨ ap (λ x → ι x ℚ* r)
+                     (inv-left ℚ∘* (q , q≠0)) ⟩
+               1ℚ ℚ* r
+                 ＝⟨ ℚ-mult-left-id fe r ⟩
+               r ∎ ]
+         r ∎
+
+   x∈pL⇔x/p∈L : (x p : ℚ) → (L : 𝓟 ℚ) →
+     (p≠0 : ¬ (p ＝ 0ℚ)) →
+     ⟨ ((p , p≠0) ◂⟨ multiplicative-ℚ ∣ ℚ*'∣𝓟ℚ ⟩ L) x ⇔Ω
+       L ( ι (inv multiplicative-ℚ (p , p≠0)) ℚ* x) ⟩
+   x∈pL⇔x/p∈L x p L p≠0
+     = id
+     , id
+
+
+   ℚ₊*∣𝓟ℚ-rounded-invariant :
+     prop-is-invariant ℚ₊*
+                       ℚ₊*∣𝓟ℚ
+                       (rounded-wrt ℚ<)
+   ℚ₊*∣𝓟ℚ-rounded-invariant gp@((g , g≠0) , g>0) L L-rounded p
+     = let ((g' , g'≠0), g'>0) = inv ℚ₊* gp
+           (Lg'p⇒∃ , Lg'p⇐∃) = L-rounded (g' ℚ* p)
+       in
+       (λ Lg'p → ∥∥-induction
+                  (λ _ → ∃-is-prop)
+                  (λ (q , g'p<q , Lq) →
+                    ∣ g ℚ* q
+                      , pr-⇒ (p/q<l⇔p<ql gp p q) g'p<q
+                        -- we have Lq
+                        -- we need L(g' * (g * q))
+                      , transport (λ x → ⟨ L x ⟩)
+                          (q
+                            ＝⟨ ℚ-mult-left-id fe q ⁻¹ ⟩
+                          1ℚ ℚ* q
+                            ＝⟨ ap (λ x → ι x ℚ* q)
+                            (inv-left multiplicative-ℚ
+                              (g , g≠0)) ⁻¹ ⟩
+                          (g' ℚ* g) ℚ* q
+                          ＝⟨ ℚ*-assoc fe g' g q ⟩
+                           g' ℚ* (g ℚ* q) ∎)
+                          Lq ∣)
+                  (Lg'p⇒∃ Lg'p))
+       , ∥∥-induction
+           (λ _ → holds-is-prop (L (pr₁ (inv ℚ∘* (g , g≠0)) ℚ* p)))
+           (λ (q , p<q , Lg'q) →
+                 (Lg'p⇐∃ ∣ g' ℚ* q
+                 , ℚ<-pos-multiplication-monotone
+                     g' p q g'>0 p<q
+                 , Lg'q ∣ ))
+
+   S₂ᵒᵖ∣ℚ : Action (S₂ ᵒᵖ)
+   S₂ᵒᵖ∣ℚ
+     = ℚ
+     , (λ { id∈S₂ x → x
+          ; flip  x → - x
+          })
+     , ℚ-is-set fe
+     , (λ { g id∈S₂ x → refl
+          ; id∈S₂ flip x → refl
+          ; flip flip x → ℚ-minus-minus fe x
+          })
+     , λ x → refl
+
+   S₂∣𝓟ℚ : Action' S₂
+   S₂∣𝓟ℚ = RelLiftActionᵒᵖ S₂ S₂ᵒᵖ∣ℚ
+
+   -- The point: rounded-right is not invariant, but rounded-wrt it
+
+   ℚ□ : 𝓟 (Rel)
+   ℚ□ = ((only (𝓟-is-set' fe pe) ℚ<) ⊕
+          (only (𝓟-is-set' fe pe) ℚ>))
+          -- Show that ℚ< ≠ ℚ>
+          λ { .ℚ< (refl , ℚ>=ℚ<) → ℚ<-not-itself 0ℚ
+            (ℚ<-trans 0ℚ 1ℚ 0ℚ
+              (ℚ-zero-less-than-positive 0 1)
+              (transport (λ P → ⟨ P (1ℚ , 0ℚ) ⟩)
+                ℚ>=ℚ<
+                (ℚ-zero-less-than-positive 0 1)))}
+
+
+   S₂∣ℚ□◃Rel : prop-is-invariant S₂ S₂∣Rel ℚ□
+   S₂∣ℚ□◃Rel id∈S₂ P prf = prf
+   S₂∣ℚ□◃Rel flip .ℚ< (inl refl) = inr refl
+   S₂∣ℚ□◃Rel flip .(opposite ℚ<) (inr refl)
+     = inl refl
+
+   S₂∣ℚ□ : Action' S₂
+   S₂∣ℚ□ = subaction S₂ S₂∣Rel ℚ□ S₂∣ℚ□◃Rel
+
+   -- Plan:
+
+   S₂'∣ℚ□×𝓟ℚ : Action' S₂
+   S₂'∣ℚ□×𝓟ℚ = S₂∣ℚ□ ⊙ S₂∣𝓟ℚ
+
    -- There ought to be a proof using the fact that
    -- the logical connectives are equivariant in some sense
    rounded-wrt-invariant-wrt-flip-ℚ< :
@@ -587,28 +642,30 @@ module DedekindReals.Symmetry.Reals.Actions
    rounded-wrt-invariant flip ((.ℚ> , inr refl) , L) L-ℚ>-rounded
      = rounded-wrt-invariant-wrt-flip-ℚ> L L-ℚ>-rounded
 
-   ℚ₊*'∣𝓟ℚ-rounded-right-invariant :
-     prop-is-invariant ℚ₊*' ℚ₊*'∣𝓟ℚ
-                       (rounded-wrt ℚ>)
 
 
    -- The reason this argument works:
-   S₂-ℚ₊*'-commute :
-     actions-commute S₂ ℚ₊*' S₂∣𝓟ℚ ℚ₊*'∣𝓟ℚ
-   S₂-ℚ₊*'-commute id∈S₂ ((h , h≠0) , h>0) L = refl
-   S₂-ℚ₊*'-commute flip ((h , h≠0) , h>0) L = nfe-by-fe fe (λ p →
+   S₂-ℚ₊*-commute :
+     actions-commute S₂ ℚ₊* S₂∣𝓟ℚ ℚ₊*∣𝓟ℚ
+   S₂-ℚ₊*-commute id∈S₂ ((h , h≠0) , h>0) L = refl
+   S₂-ℚ₊*-commute flip hp@((h , h≠0) , h>0) L = nfe-by-fe fe λ p →
+     let ((h' , h'≠0) , h'>0) = inv ℚ₊* hp in
      ap  L (
-        (- p) ℚ* h
-       ＝⟨ ℚ-negation-dist-over-mult-left fe p h ⟩
-       - (p ℚ* h) ∎
-        ))
+        h' ℚ* (- p)
+       ＝⟨ ℚ-negation-dist-over-mult-right fe h' p ⟩
+       - (h' ℚ* p) ∎
+        )
 
-   S₂⊗ℚ₊*'∣𝓟ℚ : Action' (S₂ ⊗ ℚ₊*')
-   S₂⊗ℚ₊*'∣𝓟ℚ = merge S₂       S₂∣𝓟ℚ
-                         ℚ₊*' ℚ₊*'∣𝓟ℚ
-                         S₂-ℚ₊*'-commute
+   S₂⊗ℚ₊*∣𝓟ℚ : Action' (S₂ ⊗ ℚ₊*)
+   S₂⊗ℚ₊*∣𝓟ℚ = merge S₂       S₂∣𝓟ℚ
+                         ℚ₊* ℚ₊*∣𝓟ℚ
+                         S₂-ℚ₊*-commute
 
-   ℚ₊*'∣𝓟ℚ-rounded-right-invariant
+   ℚ₊*∣𝓟ℚ-rounded-right-invariant :
+     prop-is-invariant ℚ₊* ℚ₊*∣𝓟ℚ
+                       (rounded-wrt ℚ>)
+
+   ℚ₊*∣𝓟ℚ-rounded-right-invariant
      g@((g₀ , g≠0) , g>0) L L-rounded-right p
      = transport rounded-right [g◂Lᵒᵖ]ᵒᵖ=g◂L
        [g◂Lᵒᵖ]ᵒᵖ-rounded-right p
@@ -621,10 +678,10 @@ module DedekindReals.Symmetry.Reals.Actions
                           flip ((ℚ> , inr refl) , L)
                           L-rounded-right
        g◂Lᵒᵖ : 𝓟 ℚ
-       g◂Lᵒᵖ = g ◂⟨ ℚ₊*' ∣ ℚ₊*'∣𝓟ℚ ⟩ Lᵒᵖ
+       g◂Lᵒᵖ = g ◂⟨ ℚ₊* ∣ ℚ₊*∣𝓟ℚ ⟩ Lᵒᵖ
        g◂Lᵒᵖ-rounded-left : rounded-left g◂Lᵒᵖ
        g◂Lᵒᵖ-rounded-left
-         = ℚ₊*'∣𝓟ℚ-rounded-invariant g Lᵒᵖ Lᵒᵖ-rounded-left
+         = ℚ₊*∣𝓟ℚ-rounded-invariant g Lᵒᵖ Lᵒᵖ-rounded-left
        [g◂Lᵒᵖ]ᵒᵖ : 𝓟 ℚ
        [g◂Lᵒᵖ]ᵒᵖ = flip ◂⟨ S₂ ∣ S₂∣𝓟ℚ ⟩ g◂Lᵒᵖ
        [g◂Lᵒᵖ]ᵒᵖ-rounded-right : rounded-right [g◂Lᵒᵖ]ᵒᵖ
@@ -633,15 +690,18 @@ module DedekindReals.Symmetry.Reals.Actions
                           flip ((ℚ< , inl refl) , g◂Lᵒᵖ)
                           g◂Lᵒᵖ-rounded-left
        g◂L : 𝓟 ℚ
-       g◂L = g ◂⟨ ℚ₊*' ∣  ℚ₊*'∣𝓟ℚ ⟩ L
+       g◂L = g ◂⟨ ℚ₊* ∣  ℚ₊*∣𝓟ℚ ⟩ L
        [g◂Lᵒᵖ]ᵒᵖ=g◂L : [g◂Lᵒᵖ]ᵒᵖ ＝ g◂L
-       [g◂Lᵒᵖ]ᵒᵖ=g◂L = nfe-by-fe fe (λ p → ap L
-         (- ((- p) ℚ* g₀)
-           ＝⟨ ap -_ (ℚ-negation-dist-over-mult-left fe p g₀) ⟩
-           - (- (p ℚ* g₀))
-           ＝⟨ ℚ-minus-minus fe (p ℚ* g₀) ⁻¹ ⟩
-           p ℚ* g₀ ∎
+       [g◂Lᵒᵖ]ᵒᵖ=g◂L = nfe-by-fe fe (λ p →
+         let ((g' , g'≠0) , g'>0) = inv ℚ₊* g
+         in ap L
+         (- (g' ℚ* (- p))
+           ＝⟨ ap -_ (ℚ-negation-dist-over-mult-right fe g' p) ⟩
+           - (- (g' ℚ* p))
+           ＝⟨ ℚ-minus-minus fe (g' ℚ* p) ⁻¹ ⟩
+           g' ℚ* p ∎
          ))
+
    -- Should be done more generally
 
    ℚ*'∣pre-cut-action : action-structure multiplicative-ℚ pre-cut
