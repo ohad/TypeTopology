@@ -118,4 +118,10 @@ module DedekindReals.Symmetry.Subgroups
       , (λ g h x → action-assoc G A (pr₁ g) (pr₁ h) x)
       , action-unit G A
 
+    ⊤◃ : Subgroups'
+    ⊤◃ = (λ x → ⊤Ω)
+       , (⋆ , ⋆)
+       , (λ g g' g∈⊤ g'∈⊤ → ⋆)
+       , λ g g∈⊤ → ⋆
+
 \end{code}

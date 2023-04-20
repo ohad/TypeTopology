@@ -390,6 +390,9 @@ rounded-lemma₀ (succ a) = succ (2 ℕ* pred (succ (succ a))) ＝⟨ ap (λ - �
       x ℤ* pos (succ a)                  ＝⟨ by-definition ⟩
       x ℤ* pos (succ a) ℤ+ pos 0 ∎
 
+ℚ-not-<-and-> : (p q : ℚ) → ¬ (p < q × q < p)
+ℚ-not-<-and-> p q (p<q , q<p) = 𝟘-elim (ℚ<-not-itself p (ℚ<-trans p q p p<q q<p))
+
 ℚ≤-split : Fun-Ext → (p q : ℚ) → p ≤ q → (p < q) ∔ (p ＝ q)
 ℚ≤-split fe (p , α) (q , β) (0 , e) = inr (to-subtype-＝ (is-in-lowest-terms-is-prop fe) I)
  where

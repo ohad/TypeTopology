@@ -135,24 +135,22 @@ module DedekindReals.Symmetry.ActionsConstructions where
   actions-commute : (G : Group 𝓤) → (H : Group 𝓥) →
     (A : Action' {𝓥 = 𝓦} G) →
     (B : Action' {𝓥 = 𝓦} H) →
-    {{ fordLevel :  𝓤 ＝ 𝓥 }} →
     {{ ford : ⟨ A ⟩ ＝ ⟨ B ⟩ }} →
     𝓤 ⊔ 𝓥 ⊔ 𝓦 ̇
   actions-commute G H A@( X , _◂_ , _)
                       B@(.X , _⋖_ , _)
-                  {{fordLevel = refl}} {{ford = refl}}
+                  {{ford = refl}}
     = action-structures-commute G H (_◂_) (_⋖_)
 
 
   merge : (G : Group 𝓤) → (A : Action' {𝓥 = 𝓦} G) →
           (H : Group 𝓥) → (B : Action' {𝓥 = 𝓦} H) →
-          {{ fordLevel :  𝓤 ＝ 𝓥 }} →
           {{ford : ⟨ A ⟩ ＝ ⟨ B ⟩ }} →
           actions-commute G H A B →
           Action' {𝓥 = 𝓦} (G ⊗ H)
   merge G@(_ , _·_ , _) A@(X , _◂_ , _)
         H@(_ , _⊙_ , _) B@(.X , _⋖_ , _)
-        {{fordLevel = refl}} {{ford = refl}}
+        {{ford = refl}}
         comm
     = X
     , (λ (g , h) x → g ◂ (h ⋖ x) )

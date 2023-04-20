@@ -62,6 +62,10 @@ module DedekindReals.Symmetry.Cuts
      pre-cut-wrt : (_<_ : Rel) → 𝓤 ⁺ ̇
      pre-cut-wrt _ = 𝓟 X × 𝓟 X
 
+     pre-cut-is-set : (_<_ : Rel) → is-set (pre-cut-wrt _<_)
+     pre-cut-is-set _<_ = ×-is-set (𝓟-is-set' fe pe)
+                                   (𝓟-is-set' fe pe)
+
      rounded-wrt : (R : Rel) → 𝓟' {𝓥 = 𝓤} (𝓟 X)
      rounded-wrt R P = (c𝓟∋Pi X
            (P ⟺ s𝓟∋Sigma X ((R ∧ (P ∘ pr₂ ))) ))

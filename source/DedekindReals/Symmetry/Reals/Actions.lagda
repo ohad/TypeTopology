@@ -91,8 +91,11 @@ module DedekindReals.Symmetry.Reals.Actions
    ℚ∘-is-set = sigma-is-set (ℚ-is-set fe)
      λ q → props-are-sets (negations-are-props fe)
 
+   _≠_∈ℚ-is-prop : (p q : ℚ) → is-prop (p ≠ q)
+   _≠_∈ℚ-is-prop p q p≠₁q p≠₂q = nfe-by-fe fe (λ x → 𝟘-elim (p≠₁q x))
+
    ≠0ℚ-is-prop : (p : ℚ) → is-prop (p ≠ 0ℚ)
-   ≠0ℚ-is-prop p p≠₁0 p≠₂0 = nfe-by-fe fe (λ x → 𝟘-elim (p≠₁0 x))
+   ≠0ℚ-is-prop p = p ≠ 0ℚ ∈ℚ-is-prop
 
    -- Must be somewhere!
    ℚ-dec-eq : (p q : ℚ) → (p ＝ q) ∔ (p ≠ q)
@@ -125,6 +128,20 @@ module DedekindReals.Symmetry.Reals.Actions
        qq'1 : q ℚ* q' ＝ 1ℚ
        qq'1 = pr₂ q-inv
 
+   ℚ*-no-zero-divisors' : (p q : ℚ) → (p ≠ 0ℚ) → (q ≠ 0ℚ) →
+     (p ℚ* q ≠ 0ℚ)
+   ℚ*-no-zero-divisors' p q p≠0 q≠0 = cases
+      p≠0
+      q≠0
+      ∘ (ℚ*-no-zero-divisors p q)
+
+   ℚ*-non-zero-non-zero-factors : (p q : ℚ) → (p ℚ* q ≠ 0ℚ) → (p ≠ 0ℚ)×(q ≠ 0ℚ)
+   ℚ*-non-zero-non-zero-factors p q pq≠0 with ℚ-dec-eq p 0ℚ
+   ... | inl refl = 𝟘-elim (pq≠0 (ℚ-zero-left-is-zero fe q))
+   ... | inr p≠0 with ℚ-dec-eq q 0ℚ
+   ...           | inl refl = 𝟘-elim (pq≠0 (ℚ-zero-right-is-zero fe q))
+   ...           | inr q≠0 = p≠0 , q≠0
+
    ℚ-one-not-zero : 1ℚ ≠ 0ℚ
    ℚ-one-not-zero 1=0 = ℚ-zero-not-one fe (1=0 ⁻¹)
 
@@ -132,10 +149,7 @@ module DedekindReals.Symmetry.Reals.Actions
    multiplicative-ℚ
      = ℚ∘
      , (λ (p , p≠0) (q , q≠0) → (p ℚ* q)
-       , cases
-           p≠0
-           q≠0
-           ∘ (ℚ*-no-zero-divisors p q) )
+       , ℚ*-no-zero-divisors' p q p≠0 q≠0)
      , ℚ∘-is-set
      , (λ (x , _) (y , _) (z , _) →
           to-subtype-＝
@@ -255,8 +269,18 @@ module DedekindReals.Symmetry.Reals.Actions
        -- This way around works better with left actions
      = P (pr₁ (inv multiplicative-ℚ p) ℚ* q)
 
-   ℚ∘*∣ℚ : Action (ℚ∘* ᵒᵖ)
+   ℚ∘*∣ℚ : Action ℚ∘*
    ℚ∘*∣ℚ
+     = ℚ
+     , (λ pnz x → pr₁ pnz ℚ* x)
+     , ℚ-is-set fe
+     , (λ pnz@(p , p≠0) qnz@(q , q≠0) x →
+         ℚ*-assoc fe p q x)
+     , ℚ-mult-left-id fe
+
+
+   ℚ∘*ᵒᵖ∣ℚ : Action (ℚ∘* ᵒᵖ)
+   ℚ∘*ᵒᵖ∣ℚ
      = ℚ
      , (λ pnz x → pr₁ (inv ℚ∘* pnz) ℚ* x)
      , ℚ-is-set fe
@@ -281,7 +305,7 @@ module DedekindReals.Symmetry.Reals.Actions
 
    -- Now starts the real work, hopefully
    ℚ*'∣𝓟ℚ : Action' ℚ∘*
-   ℚ*'∣𝓟ℚ = RelLiftActionᵒᵖ ℚ∘* ℚ∘*∣ℚ
+   ℚ*'∣𝓟ℚ = RelLiftActionᵒᵖ ℚ∘* ℚ∘*ᵒᵖ∣ℚ
 
    ℚ₊*∣𝓟ℚ : Action' ℚ₊*
    ℚ₊*∣𝓟ℚ = induced-action ℚ∘* ℚ₊*◃ℚ*' ℚ*'∣𝓟ℚ
@@ -399,9 +423,9 @@ module DedekindReals.Symmetry.Reals.Actions
      - a ∎
 
 
-   ℚ<-neg-multiplication-antitone : (p q q' : ℚ) → p < 0ℚ →
+   ℚ<-neg-multiplication-antitone-left : (p q q' : ℚ) → p < 0ℚ →
      q < q' → p ℚ* q > p ℚ* q'
-   ℚ<-neg-multiplication-antitone p q q' p<0 q<q' =
+   ℚ<-neg-multiplication-antitone-left p q q' p<0 q<q' =
      (p ℚ* q')
        ＝⟨ ℚ*-minus-minus fe p q' ⁻¹ ⟩
      (- p) ℚ* (- q')
@@ -418,6 +442,17 @@ module DedekindReals.Symmetry.Reals.Actions
        -p*-q'<-p*-q = ℚ<-pos-multiplication-monotone
           (- p) (- q') (- q) -p>0 -q'<-q
 
+   ℚ<-neg-multiplication-antitone-right : (p p' q : ℚ) → p < p' → q < 0ℚ → p ℚ* q > p' ℚ* q
+   ℚ<-neg-multiplication-antitone-right p p' q p<p' q<0 =
+     p' ℚ* q
+       ＝⟨ ℚ*-comm p' q ⟩
+     q ℚ* p'
+       ≺⟨ _<_ ∣ ℚ<-neg-multiplication-antitone-left
+                q p p' q<0 p<p' ⟩
+     q ℚ* p
+       ＝⟨ ℚ*-comm q p ⟩
+     p ℚ* q ∎
+
    ℚ-mult-minus-one-negates : (p : ℚ) →
      (- 1ℚ) ℚ* p ＝ - p
    ℚ-mult-minus-one-negates p =
@@ -429,21 +464,44 @@ module DedekindReals.Symmetry.Reals.Actions
         ＝⟨ ap -_ (ℚ-mult-left-id fe p) ⟩
      - p ∎
 
-
    ℚ<-neg-antitone : (p q : ℚ) →
      p < q → (- q) < (- p)
    ℚ<-neg-antitone p q p<q =
      - q
        ＝⟨ ℚ-mult-minus-one-negates q ⁻¹ ⟩
      (- 1ℚ) ℚ* q
-       ≺⟨ _<_ ∣ ℚ<-neg-multiplication-antitone
+       ≺⟨ _<_ ∣ ℚ<-neg-multiplication-antitone-left
                 (- 1ℚ) p q -1ℚ<0 p<q ⟩
      (- 1ℚ) ℚ* p
        ＝⟨ ℚ-mult-minus-one-negates p ⟩
      - p ∎
 
+   ℚ<-neg-antitone-left : (p q : ℚ) →
+     - p < q → (- q) < p
+   ℚ<-neg-antitone-left p q -p<q
+     = (- q)
+       ≺⟨ _<_ ∣ ℚ<-neg-antitone (- p) q -p<q ⟩
+       - (- p)
+       ＝[ ℚ-minus-minus fe p ⁻¹ ]
+       p ∎
 
+   ℚ<-neg-antitone-right : (p q : ℚ) →
+      p < - q →  q < (- p)
+   ℚ<-neg-antitone-right p q p<-q =
+       q
+       ＝[ ℚ-minus-minus fe q ]
+       - (- q)
+       ≺⟨ _<_ ∣ ℚ<-neg-antitone p (- q) p<-q ⟩
+       - p ∎
 
+   ℚ<-neg-neg-pos : (p : ℚ) →
+      p < 0ℚ → 0ℚ < (- p)
+   ℚ<-neg-neg-pos p p<0 =
+      0ℚ
+        ＝[ ℚ-minus-zero-is-zero ]
+      - 0ℚ
+        ≺⟨ _<_ ∣ ℚ<-neg-antitone p 0ℚ p<0 ⟩
+      - p ∎
    -- TODO: maybe we can use symmetric programming to
    -- discharge these?
 
@@ -540,6 +598,37 @@ module DedekindReals.Symmetry.Reals.Actions
           ; flip flip x → ℚ-minus-minus fe x
           })
      , λ x → refl
+
+   S₂∣ℚ : Action S₂
+   S₂∣ℚ
+     = ℚ
+     , (λ { id∈S₂ x → x
+          ; flip  x → - x
+          })
+     , ℚ-is-set fe
+     , (λ { id∈S₂ g x → refl
+          ; flip id∈S₂ x → refl
+          ; flip flip x → ℚ-minus-minus fe x
+          })
+     , λ x → refl
+
+
+   ℚ-minus-non-zero-is-non-zero : {p : ℚ} → ¬ (p ＝ 0ℚ) → ¬ (- p ＝ 0ℚ)
+   ℚ-minus-non-zero-is-non-zero {p} p≠0 -p=0 =  p≠0
+     (p
+        ＝⟨ ℚ-minus-minus fe p ⟩
+      - (- p)
+     ＝⟨ ap (λ x → - x) -p=0 ⟩
+      - 0ℚ
+     ＝⟨ ℚ-minus-zero-is-zero ⁻¹ ⟩
+     0ℚ ∎)
+
+   -- Maybe derive from existing structure?
+   S₂∣ℚ∘ : Action S₂
+   S₂∣ℚ∘ = subaction S₂ S₂∣ℚ
+              (λ x → (x ≠ 0ℚ) , (≠0ℚ-is-prop x))
+              λ { id∈S₂ x x≠0 → x≠0
+                ; flip x x≠0 → ℚ-minus-non-zero-is-non-zero x≠0}
 
    S₂∣𝓟ℚ : Action' S₂
    S₂∣𝓟ℚ = RelLiftActionᵒᵖ S₂ S₂ᵒᵖ∣ℚ
@@ -642,24 +731,39 @@ module DedekindReals.Symmetry.Reals.Actions
    rounded-wrt-invariant flip ((.ℚ> , inr refl) , L) L-ℚ>-rounded
      = rounded-wrt-invariant-wrt-flip-ℚ> L L-ℚ>-rounded
 
+   S₂-ℚ*∣ℚ-commute : actions-commute S₂ ℚ∘* S₂∣ℚ ℚ∘*∣ℚ
+   S₂-ℚ*∣ℚ-commute id∈S₂ (h , h≠0) x = refl
+   S₂-ℚ*∣ℚ-commute flip  (h , h≠0) x =
+     - (h ℚ* x)
+       ＝⟨ ℚ-negation-dist-over-mult-right fe h x ⁻¹ ⟩
+     h ℚ* (- x) ∎
 
+   S₂-ℚ∘*∣ℚ : Action (S₂ ⊗ ℚ∘*)
+   S₂-ℚ∘*∣ℚ = merge S₂ S₂∣ℚ
+                    ℚ∘* ℚ∘*∣ℚ
+                    S₂-ℚ*∣ℚ-commute
 
    -- The reason this argument works:
-   S₂-ℚ₊*-commute :
-     actions-commute S₂ ℚ₊* S₂∣𝓟ℚ ℚ₊*∣𝓟ℚ
-   S₂-ℚ₊*-commute id∈S₂ ((h , h≠0) , h>0) L = refl
-   S₂-ℚ₊*-commute flip hp@((h , h≠0) , h>0) L = nfe-by-fe fe λ p →
-     let ((h' , h'≠0) , h'>0) = inv ℚ₊* hp in
+   S₂-ℚ*∣𝓟ℚ-commute : actions-commute S₂ ℚ∘* S₂∣𝓟ℚ ℚ*'∣𝓟ℚ
+   S₂-ℚ*∣𝓟ℚ-commute id∈S₂ (h , h≠0) L = refl
+   S₂-ℚ*∣𝓟ℚ-commute flip hp@(h , h≠0) L = nfe-by-fe fe λ p →
+     let (h' , h'≠0) = inv ℚ∘* hp in
      ap  L (
         h' ℚ* (- p)
        ＝⟨ ℚ-negation-dist-over-mult-right fe h' p ⟩
        - (h' ℚ* p) ∎
         )
 
+   S₂-ℚ₊*∣𝓟ℚ-commute :
+     actions-commute S₂ ℚ₊* S₂∣𝓟ℚ ℚ₊*∣𝓟ℚ
+   S₂-ℚ₊*∣𝓟ℚ-commute g = subgroups-commute pt S₂ ℚ∘*
+     (pr₂ S₂∣𝓟ℚ) (pr₂ ℚ*'∣𝓟ℚ)
+     (⊤◃ S₂) (ℚ₊*◃ℚ*') S₂-ℚ*∣𝓟ℚ-commute (g , ⋆)
+
    S₂⊗ℚ₊*∣𝓟ℚ : Action' (S₂ ⊗ ℚ₊*)
    S₂⊗ℚ₊*∣𝓟ℚ = merge S₂       S₂∣𝓟ℚ
                          ℚ₊* ℚ₊*∣𝓟ℚ
-                         S₂-ℚ₊*-commute
+                         S₂-ℚ₊*∣𝓟ℚ-commute
 
    ℚ₊*∣𝓟ℚ-rounded-right-invariant :
      prop-is-invariant ℚ₊* ℚ₊*∣𝓟ℚ
@@ -701,19 +805,3 @@ module DedekindReals.Symmetry.Reals.Actions
            ＝⟨ ℚ-minus-minus fe (g' ℚ* p) ⁻¹ ⟩
            g' ℚ* p ∎
          ))
-
-   -- Should be done more generally
-
-   ℚ*'∣pre-cut-action : action-structure multiplicative-ℚ pre-cut
-   ℚ*'∣pre-cut-action lpnz r
-     with (p , p≠0) ← lpnz | ℚ-trichotomous fe p 0ℚ
-   ... | inl p>0 = {!!}
-   ... | inr p<0 = {!!}
-
-   ℚ*'∣pre-cut : Action' multiplicative-ℚ
-   ℚ*'∣pre-cut
-     = pre-cut
-     , (λ lq x → {!!})
-     , {!!}
-     , {!!}
-     , {!!}

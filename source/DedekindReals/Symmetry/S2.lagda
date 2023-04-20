@@ -103,6 +103,18 @@ assoc-⟨S₂∣ a ²⟩ flip flip x = refl
 unital-⟨S₂∣_²⟩ : (a : 𝓤 ̇) → is-unital S₂ _◂⟨S₂∣ a ²⟩_
 unital-⟨S₂∣ a ²⟩ x = refl
 
+S₂-order-2 : (π : ⟨ S₂ ⟩ ) → π ·⟨ S₂ ⟩ π ＝ id∈S₂
+S₂-order-2 id∈S₂ = refl
+S₂-order-2 flip = refl
+
+S₂-action-order-2 : (A : Action' {𝓥 = 𝓥} S₂) → (π : ⟨ S₂ ⟩ ) → (x : ⟨ A ⟩) → (π ·⟨ S₂ ⟩ π) ◂⟨ S₂ ∣ A ⟩ x ＝ x
+S₂-action-order-2 A π x =
+  (π ·⟨ S₂ ⟩ π) ◂⟨ S₂ ∣ A ⟩ x
+    ＝⟨ ap (λ σ → σ ◂⟨ S₂ ∣ A ⟩ x) (S₂-order-2 π) ⟩
+  id∈S₂ ◂⟨ S₂ ∣ A ⟩ x
+    ＝⟨ action-unit S₂ A x ⟩
+  x ∎
+
 Flip : (a : 𝓤 ̇) → (is-set a) → Action' S₂
 Flip a aSet = (a × a) , (_◂⟨S₂∣ a ²⟩_)
        , ×-is-set aSet aSet
